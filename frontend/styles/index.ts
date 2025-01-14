@@ -1,0 +1,1 @@
+export { taskStyles } from "./TaskStyle";
