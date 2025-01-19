@@ -1,5 +1,7 @@
+import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -7,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { Colours } from "../../assets/colours";
+import { auth } from "../../config";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +20,20 @@ const LoginScreen = () => {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleLogin = async () => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      Alert.alert("Login Successful", `Welcome back, ${user.email}`);
+    } catch (error) {
+      Alert.alert("Login Failed", (error as Error).message);
+    }
   };
 
   return (
@@ -65,13 +82,22 @@ const LoginScreen = () => {
             <Text>{showPassword ? "🙈" : "👁️"}</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={{ alignSelf: "flex-start" }}>
+        {/* TODO */}
+        <TouchableOpacity
+          style={{ alignSelf: "flex-start" }}
+          onPress={() => {}}
+        >
           <Text style={styles.forgotPassword}>Forgot password?</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.loginButton}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={handleLogin}
+          disabled={!email || !password}
+        >
           <Text style={styles.loginButtonText}>Login</Text>
+          {/* TODO */}
         </TouchableOpacity>
-        <Text style={styles.registerText}>
+        <Text style={styles.registerText} onPress={() => {}}>
           Not a member? <Text style={styles.registerLink}>Register now</Text>
         </Text>
       </View>
