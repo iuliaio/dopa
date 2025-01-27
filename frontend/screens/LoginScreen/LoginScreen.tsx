@@ -1,13 +1,9 @@
+import { RootStackParamList } from "@/app";
+import { CustomInput } from "@/components";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colours } from "../../assets/colours";
 import { auth } from "../../config";
 
@@ -15,8 +11,9 @@ const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [emailInputIsFocused, setEmailInputIsFocused] = useState(false);
-  const [passwordInputIsFocused, setPasswordInputIsFocused] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -30,7 +27,7 @@ const LoginScreen = () => {
         password
       );
       const user = userCredential.user;
-      Alert.alert("Login Successful", `Welcome back, ${user.email}`);
+      navigation.navigate("TaskList");
     } catch (error) {
       Alert.alert("Login Failed", (error as Error).message);
     }
@@ -41,51 +38,31 @@ const LoginScreen = () => {
       <View style={styles.header} />
       <View style={styles.content}>
         <Text style={styles.title}>Welcome!</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: emailInputIsFocused
-                ? Colours.highlight.primary
-                : Colours.neutral.primary,
-            },
-          ]}
+        <CustomInput
+          label="Email Address"
+          isFocused={focusedInput === "email"}
           placeholder="Email Address"
           value={email}
           onChangeText={setEmail}
-          onFocus={() => setEmailInputIsFocused(true)}
-          onBlur={() => setEmailInputIsFocused(false)}
+          onFocus={() => setFocusedInput("email")}
+          onBlur={() => setFocusedInput(null)}
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                borderColor: passwordInputIsFocused
-                  ? Colours.highlight.primary
-                  : Colours.neutral.primary,
-              },
-            ]}
-            onFocus={() => setPasswordInputIsFocused(true)}
-            onBlur={() => setPasswordInputIsFocused(false)}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={togglePasswordVisibility}
-          >
-            <Text>{showPassword ? "🙈" : "👁️"}</Text>
-          </TouchableOpacity>
-        </View>
-        {/* TODO */}
+        <CustomInput
+          label="Password"
+          placeholder="Password"
+          value={password}
+          isTextVisible={showPassword}
+          onIconPress={togglePasswordVisibility}
+          isFocused={focusedInput === "password"}
+          onChangeText={setPassword}
+          onFocus={() => setFocusedInput("password")}
+          onBlur={() => setFocusedInput(null)}
+        />
         <TouchableOpacity
           style={{ alignSelf: "flex-start" }}
-          onPress={() => {}}
+          onPress={() => navigation.navigate("ForgotPassword")}
         >
           <Text style={styles.forgotPassword}>Forgot password?</Text>
         </TouchableOpacity>
@@ -97,8 +74,14 @@ const LoginScreen = () => {
           <Text style={styles.loginButtonText}>Login</Text>
           {/* TODO */}
         </TouchableOpacity>
-        <Text style={styles.registerText} onPress={() => {}}>
-          Not a member? <Text style={styles.registerLink}>Register now</Text>
+        <Text style={styles.registerText}>
+          Not a member?{" "}
+          <Text
+            style={styles.registerLink}
+            onPress={() => navigation.navigate("Registration")}
+          >
+            Register now
+          </Text>
         </Text>
       </View>
     </View>
@@ -126,26 +109,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "left",
     width: "100%",
-  },
-  input: {
-    width: "100%",
-    height: 50,
-    borderWidth: 1,
-    borderColor: Colours.neutral.primary,
-    borderRadius: 10,
-    paddingLeft: 10,
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-  },
-  eyeIcon: {
-    position: "absolute",
-    right: 15,
-    padding: 10,
   },
   forgotPassword: {
     color: Colours.neutral.primary,

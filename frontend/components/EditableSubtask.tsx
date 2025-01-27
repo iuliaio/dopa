@@ -2,17 +2,14 @@ import { useState } from "react";
 import { Button, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Subtask } from "../../backend/src/models/types";
 import { taskStyles } from "../styles";
-import { Timer } from "./Timer";
+import Timer from "./Timer";
 
 type EditableSubtaskProps = {
   subtask: Subtask;
   onUpdate: (updatedSubtask: Subtask) => void;
 };
 
-export const EditableSubtask = ({
-  subtask,
-  onUpdate,
-}: EditableSubtaskProps) => {
+const EditableSubtask = ({ subtask, onUpdate }: EditableSubtaskProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(subtask.name);
   const [duration, setDuration] = useState(subtask.duration);
@@ -57,3 +54,5 @@ export const EditableSubtask = ({
     </View>
   );
 };
+
+export default EditableSubtask;

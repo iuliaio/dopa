@@ -5,7 +5,7 @@ type TimerProps = {
   initialMinutes: string;
 };
 
-export const Timer = ({ initialMinutes }: TimerProps) => {
+const Timer = ({ initialMinutes }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(parseInt(initialMinutes) * 60);
   const [isActive, setIsActive] = useState(false);
 
@@ -67,3 +67,5 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 });
+
+export default Timer;

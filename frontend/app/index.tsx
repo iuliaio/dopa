@@ -1,7 +1,19 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { LoginScreen } from "../screens";
+import {
+  ForgotPasswordScreen,
+  LoginScreen,
+  RegistrationScreen,
+  TaskListScreen,
+} from "../screens";
 
-const Stack = createNativeStackNavigator();
+export type RootStackParamList = {
+  Login: undefined;
+  Registration: undefined;
+  ForgotPassword: undefined;
+  TaskList: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
@@ -20,8 +32,36 @@ export default function App() {
           },
         }}
       />
-      {/* <Stack.Screen
-        name="Tasks"
+      <Stack.Screen
+        name="Registration"
+        component={RegistrationScreen}
+        options={{
+          title: "Register",
+          headerStyle: {
+            backgroundColor: "#6CACE4",
+          },
+          headerTintColor: "#000",
+          headerTitleStyle: {
+            fontWeight: "normal",
+          },
+        }}
+      />
+      <Stack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{
+          title: "Forgot Password",
+          headerStyle: {
+            backgroundColor: "#6CACE4",
+          },
+          headerTintColor: "#000",
+          headerTitleStyle: {
+            fontWeight: "normal",
+          },
+        }}
+      />
+      <Stack.Screen
+        name="TaskList"
         component={TaskListScreen}
         options={{
           title: "My Tasks",
@@ -32,8 +72,9 @@ export default function App() {
           headerTitleStyle: {
             fontWeight: "normal",
           },
+          headerBackVisible: false,
         }}
-      /> */}
+      />
     </Stack.Navigator>
   );
 }

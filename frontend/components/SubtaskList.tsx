@@ -1,7 +1,7 @@
 import { Button, View } from "react-native";
 import { Subtask } from "../../backend/src/models/types";
 import { taskStyles } from "../styles";
-import { EditableSubtask } from "./EditableSubtask";
+import EditableSubtask from "./EditableSubtask";
 
 type SubtaskListProps = {
   subtasks: Subtask[];

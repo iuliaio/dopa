@@ -9,7 +9,7 @@ type TaskCardProps = {
   onUpdateTask: (updatedTask: Task) => void;
 };
 
-export const TaskCard = ({ task, onUpdateTask }: TaskCardProps) => {
+const TaskCard = ({ task, onUpdateTask }: TaskCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(task.name);
   const [description, setDescription] = useState(task.description);
@@ -81,3 +81,5 @@ export const TaskCard = ({ task, onUpdateTask }: TaskCardProps) => {
     </View>
   );
 };
+
+export default TaskCard;
