@@ -1,15 +1,18 @@
+export type TaskStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
+
 export type Subtask = {
+  id: string;
   name: string;
-  status: string;
-  duration: string;
+  status?: TaskStatus;
+  duration?: string;
 };
 
 export type Task = {
   id: string;
   name: string;
-  description: string;
-  status: string;
+  description: string | undefined | null;
+  status: TaskStatus;
   subtasks: Subtask[];
-  scheduleDate?: Date;
-  scheduleTime?: string;
+  scheduleDate?: Date | undefined | null;
+  scheduleTime?: string | undefined | null;
 };

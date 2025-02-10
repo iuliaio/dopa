@@ -14,6 +14,7 @@ export const Colours = {
     tertiary: "#6FB9FF",
     quaternary: "#B3DAFF",
     light: "#EAF2FF",
+    lightest: "#E5F3FF",
     white: "#FFFFFF",
     dark1: "#1F2024",
     dark2: "#2F3036",

@@ -15,67 +15,13 @@ export const useTasks = () => {
       if (!response.ok) {
         throw new Error("Failed to fetch tasks");
       }
-      const data = await response.json();
+      const data: Task[] = await response.json();
       setTasks(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Failed to fetch tasks");
       console.error("Error fetching tasks:", err);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const updateTask = async (updatedTask: Task) => {
-    try {
-      const response = await fetch(`${API_URL}/api/tasks/${updatedTask.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedTask),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update task");
-      }
-
-      // Update local state
-      setTasks(
-        tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update task");
-      console.error("Error updating task:", err);
-    }
-  };
-
-  const createTask = async () => {
-    try {
-      const newTask: Omit<Task, "id"> = {
-        name: "New Task",
-        description: "Enter description",
-        status: "pending",
-        subtasks: [],
-      };
-
-      const response = await fetch(`${API_URL}/api/tasks`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newTask),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create task");
-      }
-
-      const createdTask = await response.json();
-      setTasks([...tasks, createdTask]);
-      return createdTask;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create task");
-      console.error("Error creating task:", err);
     }
   };
 
@@ -83,12 +29,5 @@ export const useTasks = () => {
     fetchTasks();
   }, []);
 
-  return {
-    tasks,
-    isLoading,
-    error,
-    refetchTasks: fetchTasks,
-    updateTask,
-    createTask,
-  };
+  return { tasks, isLoading, error, refetchTasks: fetchTasks };
 };

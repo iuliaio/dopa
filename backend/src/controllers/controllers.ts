@@ -46,13 +46,18 @@ export const createTask = async (
       name,
       description,
       status,
-      subtasks,
-      ...(scheduleDate && { scheduleDate: new Date(scheduleDate) }),
-      ...(scheduleTime && { scheduleTime }),
+      subtasks: subtasks ?? [],
+      scheduleDate: scheduleDate ? new Date(scheduleDate) : null,
+      scheduleTime: scheduleTime ?? null,
     };
 
-    const newTask = await db.collection("tasks").add(taskData);
-    res.status(201).json({ id: newTask.id, ...taskData });
+    const newTaskRef = await db.collection("tasks").add(taskData);
+
+    const createdTask = { id: newTaskRef.id, ...taskData };
+
+    await newTaskRef.set(createdTask);
+
+    res.status(201).json({ id: newTaskRef.id, ...taskData });
   } catch (error) {
     res.status(500).json({ error: "Failed to create task" });
   }
@@ -71,14 +76,18 @@ export const updateTask = async (
       name,
       description,
       status,
-      subtasks,
-      ...(scheduleDate && { scheduleDate: new Date(scheduleDate) }),
-      ...(scheduleTime && { scheduleTime }),
+      subtasks: subtasks ?? [],
+      scheduleDate:
+        scheduleDate && !isNaN(Date.parse(scheduleDate))
+          ? new Date(scheduleDate).toISOString() // Only format if it's a valid date
+          : null,
+      scheduleTime: scheduleTime ?? null,
     };
 
     await db.collection("tasks").doc(id).update(taskData);
     res.json({ id, ...taskData });
   } catch (error) {
+    console.error("Error updating task:", error);
     res.status(500).json({ error: "Failed to update task" });
   }
 };

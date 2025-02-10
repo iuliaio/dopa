@@ -3,6 +3,7 @@ import {
   ForgotPasswordScreen,
   LoginScreen,
   RegistrationScreen,
+  SingleTaskScreen,
   TaskListScreen,
 } from "../screens";
 
@@ -11,6 +12,7 @@ export type RootStackParamList = {
   Registration: undefined;
   ForgotPassword: undefined;
   TaskList: undefined;
+  SingleTask: undefined | { taskId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -73,6 +75,20 @@ export default function App() {
             fontWeight: "normal",
           },
           headerBackVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="SingleTask"
+        component={SingleTaskScreen}
+        options={{
+          title: "Task Details",
+          headerStyle: {
+            backgroundColor: "#6CACE4",
+          },
+          headerTintColor: "#000",
+          headerTitleStyle: {
+            fontWeight: "normal",
+          },
         }}
       />
     </Stack.Navigator>
