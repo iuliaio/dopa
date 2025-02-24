@@ -3,7 +3,7 @@ export const Colours = {
   highlight: {
     primary: "#FF8A4B",
     secondary: "#FFA06C",
-    tertiary: "#FF8A4B",
+    tertiary: "#FFD6C0",
     quaternary: "#F8F9FE",
   },
 
@@ -26,9 +26,9 @@ export const Colours = {
   // Support Colours
   support: {
     success: {
-      primary: "#298267",
-      secondary: "#3AC0A0",
-      light: "#E7F4EB",
+      primary: "#788A54",
+      secondary: "#AEC9B3",
+      light: "#EFFAF1",
     },
     warning: {
       primary: "#E86339",

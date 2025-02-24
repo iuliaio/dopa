@@ -71,11 +71,7 @@ const TaskCard = ({ task, onUpdateTask, onPress }: TaskCardProps) => {
         <Text style={styles.taskDescription}>{description}</Text>
       </TouchableOpacity>
       {/* )} */}
-      <SubtaskList
-        subtasks={task.subtasks}
-        onUpdateSubtask={handleUpdateSubtask}
-        onAddSubtask={handleAddSubtask}
-      />
+      <SubtaskList task={task} />
     </View>
   );
 };
