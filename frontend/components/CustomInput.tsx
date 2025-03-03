@@ -14,8 +14,8 @@ import { Fonts } from "../assets/fonts";
 import BaseText from "./BaseText";
 
 type CustomInputProps = {
-  label: string;
-  isFocused: boolean;
+  label?: string;
+  isFocused?: boolean;
   isTextVisible?: boolean;
   onIconPress?: () => void;
   style?: StyleProp<ViewStyle | TextStyle>;

@@ -1,5 +1,10 @@
 import { RootStackParamList } from "@/app";
-import { BaseText, TaskListTypeTabs } from "@/components";
+import {
+  BaseText,
+  CustomInput,
+  ScheduledTasksCalendar,
+  TaskListTypeTabs,
+} from "@/components";
 import SingleTaskCard from "@/components/SingleTaskCard";
 import { useAddTask } from "@/hooks/useAddTask";
 import { useTasks } from "@/hooks/useTasks";
@@ -8,9 +13,9 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -36,11 +41,13 @@ const TaskListScreen = () => {
     "Scheduled"
   );
   const [newTask, setNewTask] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleAddTask = async () => {
     await addTask(newTask, taskListType);
     setNewTask("");
-    refetchTasks(); // Refresh task list after adding
+    setModalVisible(false);
+    refetchTasks();
   };
 
   const loading = taskListLoading || addTaskLoading;
@@ -61,7 +68,6 @@ const TaskListScreen = () => {
   return (
     <View style={styles.container}>
       <BaseText style={styles.title}>All tasks</BaseText>
-      <BaseText style={styles.subtitle}>Browse through list</BaseText>
 
       <TaskListTypeTabs
         onPress={() =>
@@ -71,6 +77,12 @@ const TaskListScreen = () => {
         }
         taskListType={taskListType}
       />
+
+      {taskListType === "Scheduled" && (
+        <View style={styles.calendarContainer}>
+          <ScheduledTasksCalendar />
+        </View>
+      )}
 
       <FlatList
         data={tasks.filter((task) =>
@@ -90,22 +102,6 @@ const TaskListScreen = () => {
         contentContainerStyle={styles.taskList}
       />
 
-      <View style={styles.newTaskContainer}>
-        <TextInput
-          style={styles.newTaskInput}
-          placeholder="Add a new task"
-          value={newTask}
-          onChangeText={setNewTask}
-        />
-        <TouchableOpacity onPress={handleAddTask} disabled={loading}>
-          <Feather
-            name="plus-circle"
-            size={24}
-            color={Colours.highlight.primary}
-          />
-        </TouchableOpacity>
-      </View>
-
       {addTaskError && <Text style={styles.errorText}>{addTaskError}</Text>}
 
       <View style={styles.footer}>
@@ -113,11 +109,58 @@ const TaskListScreen = () => {
           <Feather name="list" size={24} color={Colours.highlight.primary} />
           <Text style={styles.footerText}>Todo List</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.footerButton,
+            {
+              backgroundColor: Colours.neutral.tertiary,
+              borderRadius: 16,
+              padding: 8,
+              marginVertical: 8,
+            },
+          ]}
+          onPress={() => setModalVisible(true)}
+        >
+          <Feather name="plus" size={24} color="white" />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.footerButton}>
           <Feather name="settings" size={24} color={Colours.neutral.primary} />
           <Text style={styles.footerText}>Settings</Text>
         </TouchableOpacity>
       </View>
+
+      {/* ////////////MODAL/////////// */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add a New Task</Text>
+            <CustomInput
+              placeholder="Task name"
+              value={newTask}
+              onChangeText={setNewTask}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.submitButton]}
+                onPress={handleAddTask}
+              >
+                <Text style={styles.modalButtonText}>Add Task</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -125,42 +168,36 @@ const TaskListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 16,
     backgroundColor: Colours.neutral.white,
   },
   title: {
     fontSize: 24,
+    paddingBottom: 16,
     fontFamily: Fonts.inter.bold,
     color: Colours.neutral.dark1,
-    marginTop: 24,
-  },
-  subtitle: {
-    color: Colours.neutral.dark3,
-    paddingVertical: 24,
   },
   taskList: {
-    marginBottom: 20,
+    paddingVertical: 22,
   },
-  newTaskContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colours.neutral.light,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-  },
-  newTaskInput: {
-    flex: 1,
-    padding: 10,
-    fontSize: 16,
-    color: Colours.neutral.dark1,
+  calendarContainer: {
+    minHeight: 350,
+    width: "100%",
+    marginVertical: 8,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     borderTopWidth: 1,
     borderTopColor: Colours.neutral.light,
-    paddingVertical: 10,
+    paddingBottom: 16,
+    paddingHorizontal: 32,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colours.neutral.white,
   },
   footerButton: {
     alignItems: "center",
@@ -179,6 +216,46 @@ const styles = StyleSheet.create({
     color: "red",
     marginTop: 10,
     textAlign: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: Colours.neutral.white,
+    padding: 18,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: Fonts.inter.bold,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: Colours.neutral.tertiary,
+  },
+  submitButton: {
+    backgroundColor: Colours.highlight.primary,
+  },
+  modalButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontFamily: Fonts.inter.bold,
   },
 });
 

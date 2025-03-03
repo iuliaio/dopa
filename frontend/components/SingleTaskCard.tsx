@@ -31,7 +31,7 @@ const SingleTaskCard = ({ task, onPress }: SingleTaskCardProps) => {
         name={isCompleted ? "check" : "chevron-right"}
         size={20}
         color={
-          isCompleted ? Colours.neutral.primary : Colours.highlight.primary
+          isCompleted ? Colours.highlight.primary : Colours.neutral.primary
         }
       />
     </TouchableOpacity>
@@ -43,9 +43,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 16,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   completedTask: {
     backgroundColor: Colours.neutral.lightest,
@@ -53,19 +54,19 @@ const styles = StyleSheet.create({
   incompleteTask: {
     backgroundColor: Colours.neutral.white,
     borderWidth: 1,
-    borderColor: Colours.highlight.primary,
+    borderColor: Colours.highlight.tertiary,
   },
   content: {
     flex: 1,
-    marginRight: 10,
+    paddingRight: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: Fonts.inter.bold,
     color: Colours.neutral.dark1,
   },
   description: {
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: Fonts.inter.regular,
     color: Colours.neutral.dark3,
     marginTop: 4,

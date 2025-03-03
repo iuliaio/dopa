@@ -43,10 +43,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
     backgroundColor: Colours.highlight.quaternary,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 8,
   },
   tab: {
-    padding: 8,
+    padding: 4,
     alignItems: "center",
     width: "50%",
   },
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     borderRadius: 8,
     color: Colours.neutral.dark3,
+    fontSize: 14,
   },
   activeTabText: {
     fontFamily: Fonts.inter.bold,
