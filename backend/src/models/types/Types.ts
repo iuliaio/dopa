@@ -13,6 +13,6 @@ export type Task = {
   description: string | undefined | null;
   status: TaskStatus;
   subtasks: Subtask[];
-  scheduleDate?: Date | undefined | null;
+  scheduleDate?: string | undefined | null;
   scheduleTime?: string | undefined | null;
 };

@@ -8,19 +8,29 @@ export const useAddTask = () => {
 
   const addTask = async (
     name: string,
-    taskListType: "Scheduled" | "Anytime"
+    scheduleDate?: string,
+    scheduleTime?: string
   ): Promise<void> => {
     if (name.trim() === "") return;
 
     setIsLoading(true);
     setError(null);
 
+    let formattedScheduleDate = undefined;
+    if (scheduleDate) {
+      // Convert to ISO 8601: YYYY-MM-DDTHH:MM:SSZ (UTC)
+      const dateTime = new Date(
+        `${scheduleDate}T${scheduleTime || "00:00"}:00Z`
+      );
+      formattedScheduleDate = dateTime.toISOString();
+    }
+
     const taskData: Omit<Task, "id"> = {
       name,
       description: "Enter description",
       subtasks: [],
       status: "PENDING",
-      scheduleDate: taskListType === "Scheduled" ? new Date() : undefined,
+      scheduleDate: formattedScheduleDate || null,
     };
 
     try {

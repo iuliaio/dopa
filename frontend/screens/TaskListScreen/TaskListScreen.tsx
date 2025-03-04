@@ -14,18 +14,21 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Calendar, type DateData } from "react-native-calendars";
 import Feather from "react-native-vector-icons/Feather";
 import { Colours } from "../../assets/colours";
 import { Fonts } from "../../assets/fonts";
 
+type TaskList = "Scheduled" | "Anytime";
+
 const TaskListScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
   const {
     tasks,
     isLoading: taskListLoading,
@@ -37,32 +40,39 @@ const TaskListScreen = () => {
     isLoading: addTaskLoading,
     error: addTaskError,
   } = useAddTask();
-  const [taskListType, setTaskListType] = useState<"Scheduled" | "Anytime">(
-    "Scheduled"
-  );
-  const [newTask, setNewTask] = useState("");
+
+  const [taskListType, setTaskListType] = useState<TaskList>("Scheduled");
   const [modalVisible, setModalVisible] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [newTask, setNewTask] = useState<{
+    name: string;
+    selectedDate: string | undefined;
+    selectedTime: string | undefined;
+  }>({
+    name: "",
+    selectedDate: undefined,
+    selectedTime: undefined,
+  });
+
+  const updateState = (key: keyof typeof newTask, value: any) => {
+    setNewTask((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleAddTask = async () => {
-    await addTask(newTask, taskListType);
-    setNewTask("");
+    if (!newTask.name.trim()) return;
+
+    await addTask(newTask.name, newTask.selectedDate, newTask.selectedTime);
+    setNewTask({
+      name: "",
+      selectedDate: undefined,
+      selectedTime: undefined,
+    });
     setModalVisible(false);
     refetchTasks();
   };
 
-  const loading = taskListLoading || addTaskLoading;
-  const error = taskListError || addTaskError;
-
-  if (loading) {
+  if (taskListLoading) {
     return <ActivityIndicator />;
-  }
-
-  if (error) {
-    return (
-      <View style={styles.error}>
-        <Text>Error: {error}</Text>
-      </View>
-    );
   }
 
   return (
@@ -110,15 +120,7 @@ const TaskListScreen = () => {
           <Text style={styles.footerText}>Todo List</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[
-            styles.footerButton,
-            {
-              backgroundColor: Colours.neutral.tertiary,
-              borderRadius: 16,
-              padding: 8,
-              marginVertical: 8,
-            },
-          ]}
+          style={[styles.footerButton, styles.addButton]}
           onPress={() => setModalVisible(true)}
         >
           <Feather name="plus" size={24} color="white" />
@@ -141,9 +143,62 @@ const TaskListScreen = () => {
             <Text style={styles.modalTitle}>Add a New Task</Text>
             <CustomInput
               placeholder="Task name"
-              value={newTask}
-              onChangeText={setNewTask}
+              value={newTask.name}
+              onChangeText={(name) => updateState("name", name)}
             />
+
+            {/* Calendar for Date Selection */}
+            <Calendar
+              onDayPress={(day: DateData) =>
+                updateState("selectedDate", day.dateString)
+              }
+              markedDates={{
+                [newTask.selectedDate || ""]: {
+                  selected: true,
+                  selectedColor: Colours.highlight.primary,
+                },
+              }}
+            />
+
+            {/* Time Selection */}
+            <TouchableOpacity
+              onPress={() => setShowTimePicker(!showTimePicker)}
+              style={styles.dateButton}
+            >
+              <Text>
+                {newTask.selectedTime
+                  ? `⏰ ${newTask.selectedTime}`
+                  : "Select a time (optional)"}
+              </Text>
+            </TouchableOpacity>
+
+            {showTimePicker && (
+              <ScrollView style={styles.timePicker}>
+                {Array.from({ length: 34 }, (_, index) => {
+                  const hour = Math.floor(index / 2) + 6; // Hours from 6:00 AM to 10:30 PM
+                  const minutes = index % 2 === 0 ? "00" : "30";
+                  const timeString = `${hour}:${minutes}`;
+
+                  return (
+                    <TouchableOpacity
+                      key={timeString}
+                      style={styles.timeOption}
+                      onPress={() => updateState("selectedTime", timeString)}
+                    >
+                      <Text>{timeString}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+
+            {addTaskLoading && (
+              <ActivityIndicator style={{ marginVertical: 10 }} />
+            )}
+            {addTaskError && (
+              <Text style={styles.errorText}>{addTaskError}</Text>
+            )}
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
@@ -166,25 +221,15 @@ const TaskListScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: Colours.neutral.white,
-  },
+  container: { flex: 1, padding: 16, backgroundColor: Colours.neutral.white },
   title: {
     fontSize: 24,
     paddingBottom: 16,
     fontFamily: Fonts.inter.bold,
     color: Colours.neutral.dark1,
   },
-  taskList: {
-    paddingVertical: 22,
-  },
-  calendarContainer: {
-    minHeight: 350,
-    width: "100%",
-    marginVertical: 8,
-  },
+  taskList: { paddingVertical: 22 },
+  calendarContainer: { minHeight: 350, width: "100%", marginVertical: 8 },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -206,16 +251,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colours.neutral.dark3,
   },
-  error: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    color: "red",
-  },
-  errorText: {
-    color: "red",
-    marginTop: 10,
-    textAlign: "center",
+  addButton: {
+    backgroundColor: Colours.highlight.primary,
+    borderRadius: 16,
+    padding: 10,
   },
   modalContainer: {
     flex: 1,
@@ -229,6 +268,17 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 10,
     alignItems: "center",
+  },
+  timePicker: { maxHeight: 120, marginTop: 10 },
+  timeOption: {
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colours.neutral.light,
+  },
+  errorText: {
+    color: "red",
+    marginTop: 10,
+    textAlign: "center",
   },
   modalTitle: {
     fontSize: 16,
@@ -256,6 +306,15 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontFamily: Fonts.inter.bold,
+  },
+  dateButton: {
+    marginVertical: 10,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colours.neutral.dark3,
+    width: "100%",
+    alignItems: "center",
   },
 });
 
