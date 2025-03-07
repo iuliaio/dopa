@@ -88,7 +88,7 @@ android {
 
     namespace "com.frontend"
     defaultConfig {
-        applicationId 'com.dopa.frontend'
+        applicationId 'com.dopa.dopa'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

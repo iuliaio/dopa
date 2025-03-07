@@ -1,5 +1,6 @@
 import { RootStackParamList } from "@/app";
 import { CustomInput } from "@/components";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
@@ -14,6 +15,8 @@ const LoginScreen = () => {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
+  const { user, promptAsync } = useGoogleAuth(); // Hook for Google login
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -30,6 +33,24 @@ const LoginScreen = () => {
       navigation.navigate("TaskList");
     } catch (error) {
       Alert.alert("Login Failed", (error as Error).message);
+    }
+  };
+
+  // Handle Google Sign-In
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await promptAsync();
+      if (result?.type === "success") {
+        console.log("Google Sign-In Successful");
+
+        // Firebase Auth is handled inside useGoogleAuth.ts, so no need to sign in here
+        navigation.navigate("TaskList"); // ✅ Navigate after login
+      } else {
+        console.warn("Google Sign-In Cancelled");
+      }
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      Alert.alert("Google Sign-In Failed");
     }
   };
 
@@ -74,6 +95,15 @@ const LoginScreen = () => {
           <Text style={styles.loginButtonText}>Login</Text>
           {/* TODO */}
         </TouchableOpacity>
+
+        {/* Google Login Button */}
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={handleGoogleLogin}
+        >
+          <Text style={styles.googleButtonText}>Sign in with Google</Text>
+        </TouchableOpacity>
+
         <Text style={styles.registerText}>
           Not a member?{" "}
           <Text
@@ -132,6 +162,20 @@ const styles = StyleSheet.create({
   },
   registerLink: {
     color: Colours.highlight.primary,
+    fontWeight: "bold",
+  },
+  googleButton: {
+    backgroundColor: Colours.highlight.primary,
+    borderRadius: 10,
+    width: "100%",
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  googleButtonText: {
+    color: "#fff",
+    fontSize: 18,
     fontWeight: "bold",
   },
 });

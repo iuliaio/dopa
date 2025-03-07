@@ -5,10 +5,12 @@ import {
   TaskListTypeTabs,
 } from "@/components";
 import SingleTaskCard from "@/components/SingleTaskCard";
+import { auth } from "@/config/firebase";
 import { useAddTask } from "@/hooks/useAddTask";
 import { useTasks } from "@/hooks/useTasks";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { format } from "date-fns";
+import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -90,6 +92,15 @@ const TaskListScreen = () => {
     return null;
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // Navigation will be handled automatically by the onAuthStateChanged listener in App.tsx
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   // Filter tasks based on selected date
   const filteredTasks = tasks.filter((task) => {
     if (taskListType !== "Scheduled") {
@@ -144,6 +155,10 @@ const TaskListScreen = () => {
         <TouchableOpacity style={styles.footerButton}>
           <Feather name="list" size={24} color={Colours.highlight.primary} />
           <Text style={styles.footerText}>Todo List</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerButton} onPress={handleLogout}>
+          <Feather name="log-out" size={24} color={Colours.neutral.primary} />
+          <Text style={styles.footerText}>Logout</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.footerButton, styles.addButton]}

@@ -1,23 +1,24 @@
 {
   "expo": {
     "name": "frontend",
-    "slug": "frontend",
+    "slug": "dopa",
+    "owner": "iuliacampa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "dopa",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dopa.frontend"
+      "bundleIdentifier": "com.dopa.dopa"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dopa.frontend"
+      "package": "com.dopa.dopa"
     },
     "web": {
       "bundler": "metro",
@@ -35,10 +36,20 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-secure-store",
+      ["expo-auth-session"]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "496d71db-48b4-4315-acd8-61c0e18f29ef"
+      }
     }
   }
 }
