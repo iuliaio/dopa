@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import { db } from "../config/firebase";
 import { Task } from "../models/types";
+///GOOGLE CALENDAR API
+import { google } from "googleapis";
+import serviceAccount from "../config/service-account.json";
 
 export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -102,5 +105,71 @@ export const deleteTask = async (
     res.json({ message: "Task deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete task" });
+  }
+};
+
+//////////GOOGLE CALENDAR API//////////
+const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
+const calendar = google.calendar("v3");
+
+// ✅ FIXED: Properly handle private key formatting for Firebase JSON
+const auth = new google.auth.JWT(
+  serviceAccount.client_email,
+  undefined,
+  (serviceAccount.private_key as string).replace(/\\n/g, "\n"), // ✅ FIX: Ensure correct private key formatting
+  SCOPES
+);
+
+export const createGoogleCalendarEvent = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { taskId } = req.params;
+    const taskDoc = await db.collection("tasks").doc(taskId).get();
+
+    if (!taskDoc.exists) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
+    const task = taskDoc.data();
+
+    if (!task?.scheduleDate) {
+      res.status(400).json({ error: "Task must have a scheduled date" });
+      return;
+    }
+
+    // Ensure scheduleDate is in proper format
+    const event = {
+      summary: task.name,
+      description: task.description || "No description provided",
+      start: {
+        dateTime: new Date(
+          `${task.scheduleDate}T${task.scheduleTime || "00:00"}:00Z`
+        ).toISOString(),
+        timeZone: "UTC",
+      },
+      end: {
+        dateTime: new Date(
+          `${task.scheduleDate}T${task.scheduleTime || "00:30"}:00Z`
+        ).toISOString(),
+        timeZone: "UTC",
+      },
+    };
+
+    const response = await calendar.events.insert({
+      auth,
+      calendarId: "primary",
+      requestBody: event,
+    });
+
+    res.json({
+      message: "Event added to Google Calendar",
+      event: response.data,
+    });
+  } catch (error) {
+    console.error("Google Calendar API error:", error);
+    res.status(500).json({ error: "Failed to add event to Google Calendar" });
   }
 };

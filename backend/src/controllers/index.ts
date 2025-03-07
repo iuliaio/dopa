@@ -1,4 +1,5 @@
 export {
+  createGoogleCalendarEvent,
   createTask,
   deleteTask,
   getTaskById,

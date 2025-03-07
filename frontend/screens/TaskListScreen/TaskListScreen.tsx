@@ -1,6 +1,5 @@
 import { RootStackParamList } from "@/app";
 import {
-  BaseText,
   CustomInput,
   ScheduledTasksCalendar,
   TaskListTypeTabs,
@@ -9,6 +8,7 @@ import SingleTaskCard from "@/components/SingleTaskCard";
 import { useAddTask } from "@/hooks/useAddTask";
 import { useTasks } from "@/hooks/useTasks";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { format } from "date-fns";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -44,6 +44,9 @@ const TaskListScreen = () => {
   const [taskListType, setTaskListType] = useState<TaskList>("Scheduled");
   const [modalVisible, setModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(
+    undefined
+  ); // Track selected date
   const [newTask, setNewTask] = useState<{
     name: string;
     selectedDate: string | undefined;
@@ -75,10 +78,34 @@ const TaskListScreen = () => {
     return <ActivityIndicator />;
   }
 
+  // Function to normalize Firestore Timestamps
+  const normalizeDate = (scheduleDate: any) => {
+    if (!scheduleDate) return null;
+
+    // If it's a Firestore timestamp, convert it
+    if (typeof scheduleDate === "object" && scheduleDate._seconds) {
+      return format(new Date(scheduleDate._seconds * 1000), "yyyy-MM-dd");
+    }
+
+    return null;
+  };
+
+  // Filter tasks based on selected date
+  const filteredTasks = tasks.filter((task) => {
+    if (taskListType !== "Scheduled") {
+      return task.scheduleDate === undefined;
+    }
+
+    if (!selectedDate) {
+      return task.scheduleDate !== undefined;
+    }
+
+    const taskDate = normalizeDate(task.scheduleDate);
+    return taskDate === selectedDate;
+  });
+
   return (
     <View style={styles.container}>
-      <BaseText style={styles.title}>All tasks</BaseText>
-
       <TaskListTypeTabs
         onPress={() =>
           setTaskListType(
@@ -90,16 +117,15 @@ const TaskListScreen = () => {
 
       {taskListType === "Scheduled" && (
         <View style={styles.calendarContainer}>
-          <ScheduledTasksCalendar />
+          <ScheduledTasksCalendar
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+          />
         </View>
       )}
 
       <FlatList
-        data={tasks.filter((task) =>
-          taskListType === "Scheduled"
-            ? task.scheduleDate !== undefined
-            : task.scheduleDate === undefined
-        )}
+        data={filteredTasks}
         renderItem={({ item }) => (
           <SingleTaskCard
             task={item}
@@ -222,12 +248,6 @@ const TaskListScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: Colours.neutral.white },
-  title: {
-    fontSize: 24,
-    paddingBottom: 16,
-    fontFamily: Fonts.inter.bold,
-    color: Colours.neutral.dark1,
-  },
   taskList: { paddingVertical: 22 },
   calendarContainer: { minHeight: 350, width: "100%", marginVertical: 8 },
   footer: {

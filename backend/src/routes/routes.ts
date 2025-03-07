@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  createGoogleCalendarEvent,
   createTask,
   deleteTask,
   getTaskById,
@@ -18,6 +19,7 @@ router.get("/", (req, res) => {
       createTask: "POST /tasks",
       updateTask: "PUT /tasks/:id",
       deleteTask: "DELETE /tasks/:id",
+      createGoogleCalendarEvent: "POST /tasks/:taskId/sync-calendar",
     },
   });
 });
@@ -27,3 +29,5 @@ router.get("/tasks/:id", getTaskById);
 router.post("/tasks", createTask);
 router.put("/tasks/:id", updateTask);
 router.delete("/tasks/:id", deleteTask);
+
+router.post("/tasks/:taskId/sync-calendar", createGoogleCalendarEvent);

@@ -46,7 +46,15 @@ export const useAddTask = () => {
         throw new Error("Failed to create task");
       }
 
-      await response.json();
+      const createdTask = await response.json();
+
+      // If task has a scheduleDate, sync with Google Calendar
+      if (formattedScheduleDate) {
+        await fetch(`${API_URL}/api/tasks/${createdTask.id}/sync-calendar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create task");
       console.error("Error creating task:", err);

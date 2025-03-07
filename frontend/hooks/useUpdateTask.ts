@@ -34,7 +34,17 @@ export const useUpdateTask = () => {
 
       if (!response.ok) throw new Error("Failed to update task");
 
-      return await response.json();
+      const updatedTaskResponse = await response.json();
+
+      // If a scheduleDate exists, sync with Google Calendar
+      if (cleanTask.scheduleDate) {
+        await fetch(`${API_URL}/api/tasks/${updatedTask.id}/sync-calendar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return updatedTaskResponse;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update task");
       console.error("Error updating task:", err);
