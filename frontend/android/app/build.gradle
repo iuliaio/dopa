@@ -86,7 +86,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.frontend"
+    namespace 'com.dopa.dopa'
     defaultConfig {
         applicationId 'com.dopa.dopa'
         minSdkVersion rootProject.ext.minSdkVersion

@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "dopa",
+    "scheme": "com.googleusercontent.apps.669636631202-6o8u9k2la79628jn0adu91fpufgu9bch",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -37,8 +37,7 @@
         }
       ],
       "expo-font",
-      "expo-secure-store",
-      ["expo-auth-session"]
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

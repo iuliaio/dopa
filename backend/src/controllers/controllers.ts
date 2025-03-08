@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { db } from "../config/firebase";
 import { Task } from "../models/types";
 ///GOOGLE CALENDAR API
+import admin from "firebase-admin";
 import { google } from "googleapis";
 import serviceAccount from "../config/service-account.json";
 
@@ -112,11 +113,10 @@ export const deleteTask = async (
 const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
 const calendar = google.calendar("v3");
 
-// ✅ FIXED: Properly handle private key formatting for Firebase JSON
 const auth = new google.auth.JWT(
   serviceAccount.client_email,
   undefined,
-  (serviceAccount.private_key as string).replace(/\\n/g, "\n"), // ✅ FIX: Ensure correct private key formatting
+  (serviceAccount.private_key as string).replace(/\n/g, "\n"),
   SCOPES
 );
 
@@ -126,7 +126,11 @@ export const createGoogleCalendarEvent = async (
 ): Promise<void> => {
   try {
     const { taskId } = req.params;
-    const taskDoc = await db.collection("tasks").doc(taskId).get();
+    const taskDoc = await admin
+      .firestore()
+      .collection("tasks")
+      .doc(taskId)
+      .get();
 
     if (!taskDoc.exists) {
       res.status(404).json({ error: "Task not found" });
@@ -140,7 +144,6 @@ export const createGoogleCalendarEvent = async (
       return;
     }
 
-    // Ensure scheduleDate is in proper format
     const event = {
       summary: task.name,
       description: task.description || "No description provided",
