@@ -7,6 +7,7 @@ import {
 import SingleTaskCard from "@/components/SingleTaskCard";
 import { auth } from "@/config/firebase";
 import { useAddTask } from "@/hooks/useAddTask";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth"; // Import the hook
 import { useTasks } from "@/hooks/useTasks";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { format } from "date-fns";
@@ -43,12 +44,15 @@ const TaskListScreen = () => {
     error: addTaskError,
   } = useAddTask();
 
+  const { calendarAccessToken, signInWithGoogle, loadSavedToken } =
+    useGoogleAuth();
+
   const [taskListType, setTaskListType] = useState<TaskList>("Scheduled");
   const [modalVisible, setModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(
     undefined
-  ); // Track selected date
+  );
   const [newTask, setNewTask] = useState<{
     name: string;
     selectedDate: string | undefined;
@@ -58,6 +62,7 @@ const TaskListScreen = () => {
     selectedDate: undefined,
     selectedTime: undefined,
   });
+  const [showGoogleAuthPrompt, setShowGoogleAuthPrompt] = useState(false);
 
   const updateState = (key: keyof typeof newTask, value: any) => {
     setNewTask((prev) => ({ ...prev, [key]: value }));
@@ -65,6 +70,11 @@ const TaskListScreen = () => {
 
   const handleAddTask = async () => {
     if (!newTask.name.trim()) return;
+
+    if (newTask.selectedDate && !calendarAccessToken) {
+      setShowGoogleAuthPrompt(true);
+      return;
+    }
 
     await addTask(newTask.name, newTask.selectedDate, newTask.selectedTime);
     setNewTask({
@@ -80,11 +90,9 @@ const TaskListScreen = () => {
     return <ActivityIndicator />;
   }
 
-  // Function to normalize Firestore Timestamps
   const normalizeDate = (scheduleDate: any) => {
     if (!scheduleDate) return null;
 
-    // If it's a Firestore timestamp, convert it
     if (typeof scheduleDate === "object" && scheduleDate._seconds) {
       return format(new Date(scheduleDate._seconds * 1000), "yyyy-MM-dd");
     }
@@ -95,13 +103,11 @@ const TaskListScreen = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      // Navigation will be handled automatically by the onAuthStateChanged listener in App.tsx
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
-  // Filter tasks based on selected date
   const filteredTasks = tasks.filter((task) => {
     if (taskListType !== "Scheduled") {
       return task.scheduleDate === undefined;
@@ -257,6 +263,69 @@ const TaskListScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Google Authentication Prompt Modal */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={showGoogleAuthPrompt}
+        onRequestClose={() => setShowGoogleAuthPrompt(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Connect to Google Calendar?</Text>
+            <Text style={styles.modalText}>
+              To add this task to your Google Calendar, you need to connect your
+              account.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowGoogleAuthPrompt(false);
+                  addTask(
+                    newTask.name,
+                    newTask.selectedDate,
+                    newTask.selectedTime
+                  );
+                  setNewTask({
+                    name: "",
+                    selectedDate: undefined,
+                    selectedTime: undefined,
+                  });
+                  setModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalButtonText}>Skip</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.submitButton]}
+                onPress={async () => {
+                  const success = await signInWithGoogle();
+                  setShowGoogleAuthPrompt(false);
+
+                  if (success) {
+                    await loadSavedToken();
+                    addTask(
+                      newTask.name,
+                      newTask.selectedDate,
+                      newTask.selectedTime
+                    );
+                    setNewTask({
+                      name: "",
+                      selectedDate: undefined,
+                      selectedTime: undefined,
+                    });
+                    setModalVisible(false);
+                  }
+                }}
+              >
+                <Text style={styles.modalButtonText}>Connect</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -304,6 +373,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
+  modalText: {
+    marginVertical: 15,
+    textAlign: "center",
+    fontSize: 14,
+  },
   timePicker: { maxHeight: 120, marginTop: 10 },
   timeOption: {
     padding: 8,
@@ -318,11 +392,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 16,
     fontFamily: Fonts.inter.bold,
+    marginBottom: 10,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+    marginTop: 20,
   },
   modalButton: {
     flex: 1,

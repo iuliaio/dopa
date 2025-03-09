@@ -4,7 +4,6 @@ import { Task } from "../models/types";
 ///GOOGLE CALENDAR API
 import admin from "firebase-admin";
 import { google } from "googleapis";
-import serviceAccount from "../config/service-account.json";
 
 export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -110,22 +109,31 @@ export const deleteTask = async (
 };
 
 //////////GOOGLE CALENDAR API//////////
-const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
-const calendar = google.calendar("v3");
-
-const auth = new google.auth.JWT(
-  serviceAccount.client_email,
-  undefined,
-  (serviceAccount.private_key as string).replace(/\n/g, "\n"),
-  SCOPES
-);
-
 export const createGoogleCalendarEvent = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
+    console.log("📢 API Call Received:", req.body);
+    console.log("📢 API Headers:", req.headers);
+
     const { taskId } = req.params;
+    const { userEmail } = req.body;
+    const accessToken = req.headers.authorization?.split(" ")[1];
+
+    console.log("🔑 Access Token received:", accessToken ? "Yes" : "No");
+    console.log("📧 User Email received:", userEmail ? userEmail : "No");
+
+    if (!userEmail || !accessToken) {
+      console.error("❌ Missing user email or access token");
+      res
+        .status(400)
+        .json({ error: "User email and access token are required" });
+      return;
+    }
+
+    console.log("🆔 Task ID:", taskId);
+
     const taskDoc = await admin
       .firestore()
       .collection("tasks")
@@ -133,46 +141,82 @@ export const createGoogleCalendarEvent = async (
       .get();
 
     if (!taskDoc.exists) {
+      console.error("❌ Task not found with ID:", taskId);
       res.status(404).json({ error: "Task not found" });
       return;
     }
 
     const task = taskDoc.data();
+    console.log("📋 Task data:", JSON.stringify(task, null, 2));
 
     if (!task?.scheduleDate) {
+      console.error("❌ Task has no scheduled date");
       res.status(400).json({ error: "Task must have a scheduled date" });
       return;
     }
+
+    // Convert Firestore Timestamp or string to ISO format
+    let startDateTime: string;
+
+    if (typeof task.scheduleDate === "object" && task.scheduleDate._seconds) {
+      startDateTime = new Date(task.scheduleDate._seconds * 1000).toISOString();
+    } else if (typeof task.scheduleDate === "string") {
+      startDateTime = task.scheduleDate.includes("T")
+        ? task.scheduleDate
+        : `${task.scheduleDate}T${task.scheduleTime || "09:00"}:00Z`;
+    } else {
+      console.error("❌ Invalid scheduleDate format:", task.scheduleDate);
+      res.status(400).json({ error: "Invalid schedule date format" });
+      return;
+    }
+
+    console.log("⏰ Start date time:", startDateTime);
+
+    const endDateTime = new Date(
+      new Date(startDateTime).getTime() + 30 * 60 * 1000
+    ).toISOString();
 
     const event = {
       summary: task.name,
       description: task.description || "No description provided",
       start: {
-        dateTime: new Date(
-          `${task.scheduleDate}T${task.scheduleTime || "00:00"}:00Z`
-        ).toISOString(),
+        dateTime: startDateTime,
         timeZone: "UTC",
       },
       end: {
-        dateTime: new Date(
-          `${task.scheduleDate}T${task.scheduleTime || "00:30"}:00Z`
-        ).toISOString(),
+        dateTime: endDateTime,
         timeZone: "UTC",
       },
     };
 
+    console.log("📅 Creating Event:", event);
+
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: accessToken });
+
+    console.log("🔑 Setting up Google Calendar API with token");
+    const calendar = google.calendar({ version: "v3", auth });
+
+    console.log("📅 Making API call to Google Calendar");
     const response = await calendar.events.insert({
-      auth,
       calendarId: "primary",
       requestBody: event,
     });
 
+    console.log("✅ Event Created Successfully:", response.data);
     res.json({
       message: "Event added to Google Calendar",
       event: response.data,
     });
   } catch (error) {
-    console.error("Google Calendar API error:", error);
-    res.status(500).json({ error: "Failed to add event to Google Calendar" });
+    console.error("❌ Google Calendar API Error:", error);
+    res.status(500).json({
+      error: "Failed to add event to Google Calendar",
+      details: (error as Error).message,
+      stack:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).stack
+          : undefined,
+    });
   }
 };
