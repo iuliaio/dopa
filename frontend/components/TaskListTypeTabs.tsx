@@ -1,6 +1,7 @@
 import { Colours } from "@/assets/colours";
 import { Fonts } from "@/assets/fonts";
 import { TaskListType } from "@/types";
+import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import BaseText from "./BaseText";
 

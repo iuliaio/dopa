@@ -5,19 +5,18 @@ import {
   TaskListTypeTabs,
 } from "@/components";
 import SingleTaskCard from "@/components/SingleTaskCard";
-import { auth } from "@/config/firebase";
 import { useAddTask } from "@/hooks/useAddTask";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useTasks } from "@/hooks/useTasks";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { format } from "date-fns";
-import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Modal,
-  ScrollView,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -49,7 +48,6 @@ const TaskListScreen = () => {
 
   const [taskListType, setTaskListType] = useState<TaskList>("Scheduled");
   const [modalVisible, setModalVisible] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(
     undefined
   );
@@ -57,12 +55,16 @@ const TaskListScreen = () => {
     name: string;
     selectedDate: string | undefined;
     selectedTime: string | undefined;
+    firstSubtaskName: string;
   }>({
     name: "",
     selectedDate: undefined,
     selectedTime: undefined,
+    firstSubtaskName: "",
   });
   const [showGoogleAuthPrompt, setShowGoogleAuthPrompt] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<Date | undefined>(undefined);
 
   const updateState = (key: keyof typeof newTask, value: any) => {
     setNewTask((prev) => ({ ...prev, [key]: value }));
@@ -76,11 +78,17 @@ const TaskListScreen = () => {
       return;
     }
 
-    await addTask(newTask.name, newTask.selectedDate, newTask.selectedTime);
+    await addTask(
+      newTask.name,
+      newTask.selectedDate,
+      newTask.selectedTime,
+      newTask.firstSubtaskName
+    );
     setNewTask({
       name: "",
       selectedDate: undefined,
       selectedTime: undefined,
+      firstSubtaskName: "",
     });
     setModalVisible(false);
     refetchTasks();
@@ -100,11 +108,13 @@ const TaskListScreen = () => {
     return null;
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Logout error:", error);
+  const handleTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(Platform.OS === "ios");
+    if (selectedDate) {
+      setSelectedTime(selectedDate);
+      const hours = selectedDate.getHours().toString().padStart(2, "0");
+      const minutes = selectedDate.getMinutes().toString().padStart(2, "0");
+      updateState("selectedTime", `${hours}:${minutes}`);
     }
   };
 
@@ -162,17 +172,16 @@ const TaskListScreen = () => {
           <Feather name="list" size={24} color={Colours.highlight.primary} />
           <Text style={styles.footerText}>Todo List</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton} onPress={handleLogout}>
-          <Feather name="log-out" size={24} color={Colours.neutral.primary} />
-          <Text style={styles.footerText}>Logout</Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.footerButton, styles.addButton]}
           onPress={() => setModalVisible(true)}
         >
           <Feather name="plus" size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
+        <TouchableOpacity
+          style={styles.footerButton}
+          onPress={() => navigation.navigate("Settings")}
+        >
           <Feather name="settings" size={24} color={Colours.neutral.primary} />
           <Text style={styles.footerText}>Settings</Text>
         </TouchableOpacity>
@@ -194,6 +203,12 @@ const TaskListScreen = () => {
               onChangeText={(name) => updateState("name", name)}
             />
 
+            <CustomInput
+              placeholder="Choose your first 2 minutes subtask"
+              value={newTask.firstSubtaskName}
+              onChangeText={(name) => updateState("firstSubtaskName", name)}
+            />
+
             {/* Calendar for Date Selection */}
             <Calendar
               onDayPress={(day: DateData) =>
@@ -207,37 +222,13 @@ const TaskListScreen = () => {
               }}
             />
 
-            {/* Time Selection */}
-            <TouchableOpacity
-              onPress={() => setShowTimePicker(!showTimePicker)}
-              style={styles.dateButton}
-            >
-              <Text>
-                {newTask.selectedTime
-                  ? `⏰ ${newTask.selectedTime}`
-                  : "Select a time (optional)"}
-              </Text>
-            </TouchableOpacity>
-
-            {showTimePicker && (
-              <ScrollView style={styles.timePicker}>
-                {Array.from({ length: 34 }, (_, index) => {
-                  const hour = Math.floor(index / 2) + 6; // Hours from 6:00 AM to 10:30 PM
-                  const minutes = index % 2 === 0 ? "00" : "30";
-                  const timeString = `${hour}:${minutes}`;
-
-                  return (
-                    <TouchableOpacity
-                      key={timeString}
-                      style={styles.timeOption}
-                      onPress={() => updateState("selectedTime", timeString)}
-                    >
-                      <Text>{timeString}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            )}
+            <DateTimePicker
+              value={selectedTime || new Date()}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={handleTimeChange}
+            />
 
             {addTaskLoading && (
               <ActivityIndicator style={{ marginVertical: 10 }} />
@@ -286,12 +277,14 @@ const TaskListScreen = () => {
                   addTask(
                     newTask.name,
                     newTask.selectedDate,
-                    newTask.selectedTime
+                    newTask.selectedTime,
+                    newTask.firstSubtaskName
                   );
                   setNewTask({
                     name: "",
                     selectedDate: undefined,
                     selectedTime: undefined,
+                    firstSubtaskName: "",
                   });
                   setModalVisible(false);
                 }}
@@ -309,12 +302,14 @@ const TaskListScreen = () => {
                     addTask(
                       newTask.name,
                       newTask.selectedDate,
-                      newTask.selectedTime
+                      newTask.selectedTime,
+                      newTask.firstSubtaskName
                     );
                     setNewTask({
                       name: "",
                       selectedDate: undefined,
                       selectedTime: undefined,
+                      firstSubtaskName: "",
                     });
                     setModalVisible(false);
                   }
@@ -378,11 +373,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
   },
-  timePicker: { maxHeight: 120, marginTop: 10 },
-  timeOption: {
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colours.neutral.light,
+  timePickerButton: {
+    backgroundColor: Colours.neutral.white,
+    borderWidth: 1,
+    borderColor: Colours.neutral.light,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+    width: "100%",
+    alignItems: "center",
+  },
+  timePickerButtonText: {
+    fontSize: 16,
+    color: Colours.neutral.dark1,
+    fontFamily: Fonts.inter.regular,
   },
   errorText: {
     color: "red",

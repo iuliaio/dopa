@@ -88,7 +88,8 @@ export const useAddTask = () => {
   const addTask = async (
     name: string,
     scheduleDate?: string,
-    scheduleTime?: string
+    scheduleTime?: string,
+    firstSubtaskName?: string
   ): Promise<void> => {
     if (name.trim() === "") return;
 
@@ -108,7 +109,16 @@ export const useAddTask = () => {
     const taskData: Omit<Task, "id"> = {
       name,
       description: "Enter description",
-      subtasks: [],
+      subtasks: firstSubtaskName
+        ? [
+            {
+              id: `${Date.now()}`,
+              name: firstSubtaskName,
+              status: "PENDING",
+              duration: "120",
+            },
+          ]
+        : [],
       status: "PENDING",
       scheduleDate: formattedScheduleDate,
     };

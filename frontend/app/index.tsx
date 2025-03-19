@@ -7,6 +7,7 @@ import {
   ForgotPasswordScreen,
   LoginScreen,
   RegistrationScreen,
+  SettingsScreen,
   SingleTaskScreen,
   TaskListScreen,
 } from "../screens";
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   ForgotPassword: undefined;
   TaskList: undefined;
   SingleTask: undefined | { taskId: string };
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,6 +57,11 @@ export default function App() {
             name="SingleTask"
             component={SingleTaskScreen}
             options={{ title: "Task Details" }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ title: "Settings" }}
           />
         </>
       ) : (
