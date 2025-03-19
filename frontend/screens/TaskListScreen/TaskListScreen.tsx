@@ -7,7 +7,7 @@ import {
 import SingleTaskCard from "@/components/SingleTaskCard";
 import { auth } from "@/config/firebase";
 import { useAddTask } from "@/hooks/useAddTask";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth"; // Import the hook
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useTasks } from "@/hooks/useTasks";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { format } from "date-fns";

@@ -1,109 +1,17 @@
-// import { useState } from "react";
-// import { Task } from "../../backend/src/models/types";
-// import { API_URL } from "../config";
-// import { auth } from "../config/firebase"; // ✅ Import Firebase Auth
-
-// export const useAddTask = () => {
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [error, setError] = useState<string | null>(null);
-
-//   const syncWithCalendar = async (taskId: string) => {
-//     try {
-//       const userEmail = auth.currentUser?.email; // ✅ Get logged-in user's email
-
-//       if (!userEmail) {
-//         console.error("❌ No logged-in user found.");
-//         return;
-//       }
-
-//       const syncUrl = `${API_URL}/api/tasks/${taskId}/sync-calendar`;
-//       console.log(
-//         `📢 Attempting to sync Task with Google Calendar: ${syncUrl}`
-//       );
-
-//       const response = await fetch(syncUrl, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ userEmail }), // ✅ Send userEmail
-//       });
-
-//       const text = await response.text();
-//       console.log("📅 Raw Response:", text);
-
-//       const result = JSON.parse(text);
-//       console.log("✅ Google Calendar Sync Response:", result);
-//     } catch (error) {
-//       console.error("❌ Google Calendar Sync Failed:", error);
-//     }
-//   };
-
-//   const addTask = async (
-//     name: string,
-//     scheduleDate?: string,
-//     scheduleTime?: string
-//   ): Promise<void> => {
-//     if (name.trim() === "") return;
-
-//     setIsLoading(true);
-//     setError(null);
-
-//     let formattedScheduleDate = undefined;
-//     if (scheduleDate) {
-//       // Convert to ISO 8601 format (UTC time)
-//       const dateTime = new Date(
-//         `${scheduleDate}T${scheduleTime || "00:00"}:00Z`
-//       );
-//       formattedScheduleDate = dateTime.toISOString();
-//     }
-
-//     const taskData: Omit<Task, "id"> = {
-//       name,
-//       description: "Enter description",
-//       subtasks: [],
-//       status: "PENDING",
-//       scheduleDate: formattedScheduleDate || null,
-//     };
-
-//     try {
-//       const response = await fetch(`${API_URL}/api/tasks`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(taskData),
-//       });
-
-//       if (!response.ok) {
-//         throw new Error("Failed to create task");
-//       }
-
-//       const createdTask = await response.json();
-//       console.log("✅ Task Created:", createdTask);
-
-//       if (formattedScheduleDate) {
-//         await syncWithCalendar(createdTask.id);
-//       }
-//     } catch (err) {
-//       setError(err instanceof Error ? err.message : "Failed to create task");
-//       console.error("❌ Error creating task:", err);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   return { addTask, isLoading, error };
-// };
-
+import * as Notifications from "expo-notifications";
 import { useState } from "react";
 import { Task } from "../../backend/src/models/types";
 import { API_URL } from "../config";
-import { auth } from "../config/firebase"; // ✅ Import Firebase Auth
-import { useGoogleAuth } from "./useGoogleAuth"; // ✅ Import Google Auth Hook
+import { auth } from "../config/firebase";
+import { useGoogleAuth } from "./useGoogleAuth";
+import { usePushNotifications } from "./usePushNotifications";
 
 export const useAddTask = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, calendarAccessToken } = useGoogleAuth(); // ✅ Get access token from Google Auth Hook
+  const { user, calendarAccessToken } = useGoogleAuth();
+  const { expoPushToken } = usePushNotifications();
 
-  // In useAddTask.tsx, modify the syncWithCalendar function:
   const syncWithCalendar = async (taskId: string) => {
     console.log("📡 syncWithCalendar called with taskId:", taskId);
     console.log("🔑 Calendar token available:", !!calendarAccessToken);
@@ -160,6 +68,23 @@ export const useAddTask = () => {
     }
   };
 
+  const sendPushNotification = async (taskName: string) => {
+    if (!expoPushToken) {
+      console.warn("⚠️ No Expo Push Token available - Notification skipped.");
+      return;
+    }
+
+    console.log(`📢 Sending push notification for task: ${taskName}`);
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "New Task Added ✅",
+        body: `Your task "${taskName}" has been created.`,
+        sound: true,
+      },
+      trigger: null, // Immediate notification
+    });
+  };
+
   const addTask = async (
     name: string,
     scheduleDate?: string,
@@ -202,6 +127,8 @@ export const useAddTask = () => {
 
       const createdTask = await response.json();
       console.log("✅ Task Created:", createdTask);
+
+      await sendPushNotification(name);
 
       if (formattedScheduleDate && calendarAccessToken) {
         console.log("🔍 Should sync with calendar - Conditions met");
