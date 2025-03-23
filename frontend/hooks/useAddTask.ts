@@ -96,9 +96,18 @@ export const useAddTask = () => {
     setIsLoading(true);
     setError(null);
 
-    let formattedScheduleDate = scheduleDate
-      ? new Date(`${scheduleDate}T${scheduleTime || "00:00"}:00Z`).toISOString()
-      : null;
+    // Format the date in ISO 8601 format with timezone
+    let formattedScheduleDate = null;
+    if (scheduleDate) {
+      const date = new Date(scheduleDate);
+      if (scheduleTime) {
+        const [hours, minutes] = scheduleTime.split(":");
+        date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+      } else {
+        date.setHours(0, 0, 0, 0);
+      }
+      formattedScheduleDate = date.toISOString();
+    }
 
     console.log("📅 Task creation - Schedule date:", formattedScheduleDate);
     console.log(
@@ -132,7 +141,8 @@ export const useAddTask = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create task");
+        const errorText = await response.text();
+        throw new Error(`Failed to create task: ${errorText}`);
       }
 
       const createdTask = await response.json();
@@ -151,8 +161,11 @@ export const useAddTask = () => {
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create task");
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create task";
+      setError(errorMessage);
       console.error("❌ Error creating task:", err);
+      throw err; // Re-throw to handle in the component
     } finally {
       setIsLoading(false);
     }

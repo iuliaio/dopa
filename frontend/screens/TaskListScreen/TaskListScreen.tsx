@@ -1,6 +1,7 @@
 import { RootStackParamList } from "@/app";
 import {
-  CustomInput,
+  BaseText,
+  NewTaskModal,
   ScheduledTasksCalendar,
   TaskListTypeTabs,
 } from "@/components";
@@ -8,7 +9,6 @@ import SingleTaskCard from "@/components/SingleTaskCard";
 import { useAddTask } from "@/hooks/useAddTask";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useTasks } from "@/hooks/useTasks";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { format } from "date-fns";
 import React, { useState } from "react";
@@ -16,14 +16,12 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Calendar, type DateData } from "react-native-calendars";
-import Feather from "react-native-vector-icons/Feather";
+import { Task } from "../../../backend/src/models/types";
 import { Colours } from "../../assets/colours";
 import { Fonts } from "../../assets/fonts";
 
@@ -51,52 +49,15 @@ const TaskListScreen = () => {
   const [selectedDate, setSelectedDate] = useState<string | undefined>(
     undefined
   );
-  const [newTask, setNewTask] = useState<{
-    name: string;
-    selectedDate: string | undefined;
-    selectedTime: string | undefined;
-    firstSubtaskName: string;
-  }>({
+  const [newTask, setNewTask] = useState<Task>({
+    id: "",
     name: "",
-    selectedDate: undefined,
-    selectedTime: undefined,
-    firstSubtaskName: "",
+    scheduleDate: selectedDate ?? undefined,
+    subtasks: [{ id: "", name: "", status: "PENDING", duration: "" }],
+    description: "",
+    status: "PENDING",
   });
   const [showGoogleAuthPrompt, setShowGoogleAuthPrompt] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<Date | undefined>(undefined);
-
-  const updateState = (key: keyof typeof newTask, value: any) => {
-    setNewTask((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleAddTask = async () => {
-    if (!newTask.name.trim()) return;
-
-    if (newTask.selectedDate && !calendarAccessToken) {
-      setShowGoogleAuthPrompt(true);
-      return;
-    }
-
-    await addTask(
-      newTask.name,
-      newTask.selectedDate,
-      newTask.selectedTime,
-      newTask.firstSubtaskName
-    );
-    setNewTask({
-      name: "",
-      selectedDate: undefined,
-      selectedTime: undefined,
-      firstSubtaskName: "",
-    });
-    setModalVisible(false);
-    refetchTasks();
-  };
-
-  if (taskListLoading) {
-    return <ActivityIndicator />;
-  }
 
   const normalizeDate = (scheduleDate: any) => {
     if (!scheduleDate) return null;
@@ -106,16 +67,6 @@ const TaskListScreen = () => {
     }
 
     return null;
-  };
-
-  const handleTimeChange = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(Platform.OS === "ios");
-    if (selectedDate) {
-      setSelectedTime(selectedDate);
-      const hours = selectedDate.getHours().toString().padStart(2, "0");
-      const minutes = selectedDate.getMinutes().toString().padStart(2, "0");
-      updateState("selectedTime", `${hours}:${minutes}`);
-    }
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -130,6 +81,44 @@ const TaskListScreen = () => {
     const taskDate = normalizeDate(task.scheduleDate);
     return taskDate === selectedDate;
   });
+
+  const handleAddTask = async (
+    taskName: string,
+    subtaskName: string,
+    time?: string
+  ) => {
+    if (!taskName.trim()) return;
+
+    if (selectedDate && !calendarAccessToken) {
+      setNewTask({
+        ...newTask,
+        name: taskName,
+        scheduleDate: selectedDate,
+        scheduleTime: time,
+        subtasks: [
+          { id: "", name: subtaskName, status: "PENDING", duration: "" },
+        ],
+      });
+      setShowGoogleAuthPrompt(true);
+      return;
+    }
+
+    try {
+      await addTask(taskName, selectedDate, time, subtaskName);
+      setNewTask({
+        id: "",
+        name: "",
+        scheduleDate: selectedDate ?? undefined,
+        subtasks: [{ id: "", name: "", status: "PENDING", duration: "" }],
+        description: "",
+        status: "PENDING",
+      });
+      setModalVisible(false);
+      await refetchTasks();
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -146,114 +135,41 @@ const TaskListScreen = () => {
         <View style={styles.calendarContainer}>
           <ScheduledTasksCalendar
             selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
+            setSelectedDate={(date) => {
+              setSelectedDate(date);
+              setModalVisible(true);
+              setNewTask((prev) => ({
+                ...prev,
+                scheduleDate: date,
+              }));
+            }}
           />
         </View>
       )}
 
       <FlatList
         data={filteredTasks}
-        renderItem={({ item }) => (
-          <SingleTaskCard
-            task={item}
-            onPress={() =>
-              navigation.navigate("SingleTask", { taskId: item.id })
-            }
-          />
-        )}
+        renderItem={({ item }) => {
+          if (taskListLoading) {
+            return <ActivityIndicator />;
+          }
+          if (taskListError) {
+            return <Text style={styles.errorText}>{taskListError}</Text>;
+          }
+          return (
+            <SingleTaskCard
+              task={item}
+              onPress={() =>
+                navigation.navigate("SingleTask", { taskId: item.id })
+              }
+            />
+          );
+        }}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.taskList}
       />
 
       {addTaskError && <Text style={styles.errorText}>{addTaskError}</Text>}
-
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Feather name="list" size={24} color={Colours.highlight.primary} />
-          <Text style={styles.footerText}>Todo List</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.footerButton, styles.addButton]}
-          onPress={() => setModalVisible(true)}
-        >
-          <Feather name="plus" size={24} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.footerButton}
-          onPress={() => navigation.navigate("Settings")}
-        >
-          <Feather name="settings" size={24} color={Colours.neutral.primary} />
-          <Text style={styles.footerText}>Settings</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ////////////MODAL/////////// */}
-      <Modal
-        animationType="slide"
-        transparent
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add a New Task</Text>
-            <CustomInput
-              placeholder="Task name"
-              value={newTask.name}
-              onChangeText={(name) => updateState("name", name)}
-            />
-
-            <CustomInput
-              placeholder="Choose your first 2 minutes subtask"
-              value={newTask.firstSubtaskName}
-              onChangeText={(name) => updateState("firstSubtaskName", name)}
-            />
-
-            {/* Calendar for Date Selection */}
-            <Calendar
-              onDayPress={(day: DateData) =>
-                updateState("selectedDate", day.dateString)
-              }
-              markedDates={{
-                [newTask.selectedDate || ""]: {
-                  selected: true,
-                  selectedColor: Colours.highlight.primary,
-                },
-              }}
-            />
-
-            <DateTimePicker
-              value={selectedTime || new Date()}
-              mode="time"
-              is24Hour={true}
-              display="default"
-              onChange={handleTimeChange}
-            />
-
-            {addTaskLoading && (
-              <ActivityIndicator style={{ marginVertical: 10 }} />
-            )}
-            {addTaskError && (
-              <Text style={styles.errorText}>{addTaskError}</Text>
-            )}
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
-                onPress={handleAddTask}
-              >
-                <Text style={styles.modalButtonText}>Add Task</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Google Authentication Prompt Modal */}
       <Modal
@@ -264,11 +180,13 @@ const TaskListScreen = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Connect to Google Calendar?</Text>
-            <Text style={styles.modalText}>
+            <BaseText variant="semiBold" size={16}>
+              Connect to Google Calendar?
+            </BaseText>
+            <BaseText size={14}>
               To add this task to your Google Calendar, you need to connect your
               account.
-            </Text>
+            </BaseText>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
@@ -276,15 +194,20 @@ const TaskListScreen = () => {
                   setShowGoogleAuthPrompt(false);
                   addTask(
                     newTask.name,
-                    newTask.selectedDate,
-                    newTask.selectedTime,
-                    newTask.firstSubtaskName
+                    newTask.scheduleDate ?? undefined,
+                    newTask.scheduleTime ?? undefined,
+                    newTask.subtasks[0].name
                   );
                   setNewTask({
+                    id: "",
                     name: "",
-                    selectedDate: undefined,
-                    selectedTime: undefined,
-                    firstSubtaskName: "",
+                    scheduleDate: undefined,
+                    scheduleTime: undefined,
+                    subtasks: [
+                      { id: "", name: "", status: "PENDING", duration: "" },
+                    ],
+                    description: "",
+                    status: "PENDING",
                   });
                   setModalVisible(false);
                 }}
@@ -301,15 +224,20 @@ const TaskListScreen = () => {
                     await loadSavedToken();
                     addTask(
                       newTask.name,
-                      newTask.selectedDate,
-                      newTask.selectedTime,
-                      newTask.firstSubtaskName
+                      newTask.scheduleDate ?? undefined,
+                      newTask.scheduleTime ?? undefined,
+                      newTask.subtasks[0].name
                     );
                     setNewTask({
+                      id: "",
                       name: "",
-                      selectedDate: undefined,
-                      selectedTime: undefined,
-                      firstSubtaskName: "",
+                      scheduleDate: undefined,
+                      scheduleTime: undefined,
+                      subtasks: [
+                        { id: "", name: "", status: "PENDING", duration: "" },
+                      ],
+                      description: "",
+                      status: "PENDING",
                     });
                     setModalVisible(false);
                   }
@@ -321,82 +249,36 @@ const TaskListScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <NewTaskModal
+        selectedDate={selectedDate}
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        onAddTask={handleAddTask}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: Colours.neutral.white },
-  taskList: { paddingVertical: 22 },
-  calendarContainer: { minHeight: 350, width: "100%", marginVertical: 8 },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: Colours.neutral.light,
-    paddingBottom: 16,
-    paddingHorizontal: 32,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Colours.neutral.white,
-  },
-  footerButton: {
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 12,
-    color: Colours.neutral.dark3,
-  },
-  addButton: {
-    backgroundColor: Colours.highlight.primary,
-    borderRadius: 16,
-    padding: 10,
-  },
-  modalContainer: {
+  container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    width: "80%",
+    padding: 16,
     backgroundColor: Colours.neutral.white,
-    padding: 18,
-    borderRadius: 10,
-    alignItems: "center",
   },
-  modalText: {
-    marginVertical: 15,
-    textAlign: "center",
-    fontSize: 14,
+  taskList: {
+    paddingVertical: 22,
+    paddingBottom: 100, // Add padding to account for the peek modal
   },
-  timePickerButton: {
-    backgroundColor: Colours.neutral.white,
-    borderWidth: 1,
-    borderColor: Colours.neutral.light,
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 10,
+  calendarContainer: {
+    minHeight: 350,
     width: "100%",
-    alignItems: "center",
-  },
-  timePickerButtonText: {
-    fontSize: 16,
-    color: Colours.neutral.dark1,
-    fontFamily: Fonts.inter.regular,
+    marginVertical: 8,
   },
   errorText: {
     color: "red",
     marginTop: 10,
     textAlign: "center",
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontFamily: Fonts.inter.bold,
-    marginBottom: 10,
   },
   modalButtons: {
     flexDirection: "row",
@@ -422,14 +304,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Fonts.inter.bold,
   },
-  dateButton: {
-    marginVertical: 10,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colours.neutral.dark3,
-    width: "100%",
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    backgroundColor: Colours.neutral.white,
+    padding: 18,
+    borderRadius: 16,
     alignItems: "center",
+    width: "100%",
+    gap: 6,
   },
 });
 

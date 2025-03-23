@@ -1,8 +1,11 @@
+import { Colours } from "@/assets/colours";
 import { auth } from "@/config/firebase";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { onAuthStateChanged, User } from "firebase/auth";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
+import Feather from "react-native-vector-icons/Feather";
 import {
   ForgotPasswordScreen,
   LoginScreen,
@@ -22,6 +25,15 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const SettingsButton = () => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  return (
+    <TouchableOpacity onPress={() => navigation.navigate("Settings")}>
+      <Feather name="settings" size={24} color={Colours.neutral.primary} />
+    </TouchableOpacity>
+  );
+};
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -51,7 +63,11 @@ export default function App() {
           <Stack.Screen
             name="TaskList"
             component={TaskListScreen}
-            options={{ title: "My Tasks", headerBackVisible: false }}
+            options={{
+              title: "My Tasks",
+              headerBackVisible: false,
+              headerRight: () => <SettingsButton />,
+            }}
           />
           <Stack.Screen
             name="SingleTask"

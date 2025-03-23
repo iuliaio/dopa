@@ -1,3 +1,4 @@
+import React from "react";
 import {
   StyleProp,
   StyleSheet,
@@ -29,7 +30,7 @@ const CustomInput = ({
   style,
   ...props
 }: CustomInputProps) => {
-  const passwordInput = (
+  return (
     <View>
       <BaseText style={styles.label}>{label}</BaseText>
       <View style={styles.passwordContainer}>
@@ -64,8 +65,6 @@ const CustomInput = ({
       </View>
     </View>
   );
-
-  return passwordInput;
 };
 
 const styles = StyleSheet.create({
@@ -73,8 +72,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.inter.semiBold,
     color: Colours.neutral.dark1,
-    marginLeft: 4,
-    paddingBottom: 8,
   },
   input: {
     width: "100%",
@@ -89,7 +86,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     width: "100%",
-    marginBottom: 15,
   },
   eyeIcon: {
     position: "absolute",

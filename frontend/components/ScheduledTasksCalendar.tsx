@@ -1,16 +1,17 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Calendar, type DateData } from "react-native-calendars";
+import { Colours } from "../assets/colours";
 
-type Props = {
+type ScheduledTasksCalendarProps = {
   selectedDate: string | undefined;
   setSelectedDate: (date: string) => void;
 };
 
-const ScheduledTasksCalendar: React.FC<Props> = ({
+const ScheduledTasksCalendar = ({
   selectedDate,
   setSelectedDate,
-}) => {
+}: ScheduledTasksCalendarProps) => {
   return (
     <View style={styles.container}>
       <Calendar
@@ -19,7 +20,7 @@ const ScheduledTasksCalendar: React.FC<Props> = ({
           [selectedDate || ""]: {
             selected: true,
             marked: true,
-            selectedColor: "blue",
+            selectedColor: Colours.highlight.primary,
           },
         }}
       />

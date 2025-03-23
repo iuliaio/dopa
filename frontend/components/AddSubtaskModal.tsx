@@ -1,6 +1,6 @@
 import { Colours } from "@/assets/colours";
 import { Fonts } from "@/assets/fonts";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Button,
   Modal,
