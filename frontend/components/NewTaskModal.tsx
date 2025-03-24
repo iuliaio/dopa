@@ -1,42 +1,30 @@
+import { formatScheduleDate } from "@/utils/dateUtils";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Animated,
   PanResponder,
-  Platform,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { Colours } from "../assets/colours";
-import { Fonts } from "../assets/fonts";
 import BaseText from "./BaseText";
+import CustomInput from "./CustomInput";
 
 type NewTaskModalProps = {
   selectedDate: string | undefined;
-  modalVisible: boolean;
-  setModalVisible: (visible: boolean) => void;
   onAddTask: (taskName: string, subtaskName: string, time?: string) => void;
 };
 
-const NewTaskModal = ({
-  selectedDate,
-  modalVisible,
-  setModalVisible,
-  onAddTask,
-}: NewTaskModalProps) => {
-  const [taskName, setTaskName] = React.useState("");
-  const [subtaskName, setSubtaskName] = React.useState("");
-  const [showTimePicker, setShowTimePicker] = React.useState(false);
-  const [selectedTime, setSelectedTime] = React.useState<Date | undefined>(
-    undefined
-  );
-  const [isFullyExpanded, setIsFullyExpanded] = React.useState(false);
+const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
+  const [taskName, setTaskName] = useState("");
+  const [subtaskName, setSubtaskName] = useState("");
+  const [selectedTime, setSelectedTime] = useState<Date | undefined>(undefined);
+  const [isFullyExpanded, setIsFullyExpanded] = useState(false);
 
-  const pan = useRef(new Animated.ValueXY()).current;
   const modalHeight = useRef(new Animated.Value(70)).current;
   const currentHeight = useRef(70);
   const maxHeight = 600;
@@ -46,7 +34,6 @@ const NewTaskModal = ({
     setTaskName("");
     setSubtaskName("");
     setSelectedTime(undefined);
-    setShowTimePicker(false);
     setIsFullyExpanded(false);
   };
 
@@ -59,7 +46,6 @@ const NewTaskModal = ({
       tension: 65,
       useNativeDriver: false,
     }).start(() => {
-      setModalVisible(false);
       resetForm();
     });
   };
@@ -75,13 +61,6 @@ const NewTaskModal = ({
       tension: 65,
       useNativeDriver: false,
     }).start();
-  };
-
-  const handleTimeChange = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(Platform.OS === "ios");
-    if (selectedDate) {
-      setSelectedTime(selectedDate);
-    }
   };
 
   const handleAddTask = () => {
@@ -122,12 +101,6 @@ const NewTaskModal = ({
     })
   ).current;
 
-  useEffect(() => {
-    if (!modalVisible) {
-      resetForm();
-    }
-  }, [modalVisible]);
-
   return (
     <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
       <Animated.View
@@ -139,9 +112,6 @@ const NewTaskModal = ({
         ]}
         {...panResponder.panHandlers}
       >
-        <View style={styles.modalHandle} />
-
-        {/* Peek Content */}
         {!isFullyExpanded && (
           <TouchableOpacity
             style={styles.peekContent}
@@ -152,7 +122,9 @@ const NewTaskModal = ({
               name="plus"
               size={24}
               color={
-                selectedDate ? Colours.highlight.primary : Colours.neutral.light
+                selectedDate
+                  ? Colours.highlight.primary
+                  : Colours.neutral.quaternary
               }
             />
             <BaseText
@@ -161,7 +133,7 @@ const NewTaskModal = ({
               style={{
                 color: selectedDate
                   ? Colours.neutral.dark1
-                  : Colours.neutral.light,
+                  : Colours.neutral.quaternary,
               }}
             >
               {selectedDate ? "Add new task" : "Select date to add a new task"}
@@ -183,52 +155,56 @@ const NewTaskModal = ({
           ]}
         >
           <View style={styles.header}>
-            <BaseText size={20} variant="semiBold">
-              Add New Task
-            </BaseText>
             <TouchableOpacity onPress={closeModal}>
-              <Feather name="x" size={24} color={Colours.neutral.dark1} />
+              <Feather name="x" size={24} color={Colours.neutral.dark5} />
             </TouchableOpacity>
           </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Task name"
-            value={taskName}
-            onChangeText={setTaskName}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="First subtask (2 minutes)"
-            value={subtaskName}
-            onChangeText={setSubtaskName}
-          />
-
-          <View style={styles.dateContainer}>
-            <BaseText size={16}>Date</BaseText>
-            <BaseText size={14}>{selectedDate}</BaseText>
+          <View style={{ paddingBottom: 12 }}>
+            <BaseText
+              size={18}
+              variant="semiBold"
+              style={{ color: Colours.neutral.dark1 }}
+            >
+              {selectedDate && formatScheduleDate(selectedDate)}
+            </BaseText>
           </View>
 
-          <TouchableOpacity
-            style={styles.timePickerButton}
-            onPress={() => setShowTimePicker(true)}
-          >
-            <BaseText size={16}>Time</BaseText>
-            <BaseText size={14}>
-              {selectedTime ? selectedTime.toLocaleTimeString() : "Select time"}
-            </BaseText>
-          </TouchableOpacity>
-
-          {showTimePicker && (
-            <DateTimePicker
-              value={selectedTime || new Date()}
-              mode="time"
-              is24Hour={true}
-              display="default"
-              onChange={handleTimeChange}
+          <View style={{ gap: 16 }}>
+            <CustomInput
+              placeholder="Task name"
+              value={taskName}
+              onChangeText={setTaskName}
             />
-          )}
+            <CustomInput
+              label="Choose the first subtask to get you started"
+              placeholder="First subtask (duration 2 minutes)"
+              value={subtaskName}
+              onChangeText={setSubtaskName}
+            />
+          </View>
+
+          <View>
+            <BaseText
+              size={16}
+              variant="semiBold"
+              style={{ color: Colours.neutral.dark1, marginTop: 12 }}
+            >
+              Time
+            </BaseText>
+            <View style={styles.timePickerSection}>
+              <DateTimePicker
+                value={selectedTime || new Date()}
+                mode="time"
+                display="spinner"
+                onChange={(event, time) => {
+                  if (event.type === "set" && time) {
+                    setSelectedTime(time);
+                  }
+                }}
+              />
+            </View>
+          </View>
 
           <TouchableOpacity
             style={[
@@ -255,9 +231,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: Colours.neutral.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: "#000",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: "black",
     shadowOffset: {
       width: 0,
       height: -2,
@@ -267,62 +243,33 @@ const styles = StyleSheet.create({
     elevation: 5,
     paddingTop: 8,
   },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: Colours.neutral.light,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 8,
-  },
   peekContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
     paddingVertical: 12,
   },
   fullModalContent: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    gap: 16,
+    gap: 8,
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
-    marginBottom: 16,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: Colours.neutral.light,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    fontFamily: Fonts.inter.regular,
-  },
-  dateContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  timePickerSection: {
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colours.neutral.light,
-  },
-  timePickerButton: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colours.neutral.light,
   },
   addButton: {
-    backgroundColor: Colours.highlight.primary,
-    padding: 16,
+    backgroundColor: Colours.highlight.secondary,
+    padding: 8,
     borderRadius: 8,
     alignItems: "center",
     marginTop: 16,
+    width: "80%",
+    alignSelf: "center",
   },
   disabledButton: {
     backgroundColor: Colours.neutral.light,

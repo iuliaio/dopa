@@ -1,4 +1,5 @@
 import { RootStackParamList } from "@/app";
+import { Fonts } from "@/assets/fonts";
 import { CustomInput } from "@/components";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
@@ -93,7 +94,6 @@ const LoginScreen = () => {
           disabled={!email || !password}
         >
           <Text style={styles.loginButtonText}>Login</Text>
-          {/* TODO */}
         </TouchableOpacity>
 
         {/* Google Login Button */}
@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colours.neutral.white,
     padding: 20,
     alignItems: "center",
+    gap: 8,
   },
   title: {
     fontSize: 28,
@@ -145,38 +146,38 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: Colours.neutral.primary,
-    borderRadius: 10,
+    borderRadius: 8,
     width: "100%",
-    height: 50,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
-    marginVertical: 20,
+    marginTop: 12,
   },
   loginButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: "white",
+    fontSize: 16,
   },
   registerText: {
-    color: "#666",
+    color: Colours.neutral.dark3,
+    fontFamily: Fonts.inter.regular,
   },
   registerLink: {
     color: Colours.highlight.primary,
-    fontWeight: "bold",
+    fontFamily: Fonts.inter.bold,
   },
   googleButton: {
-    backgroundColor: Colours.highlight.primary,
-    borderRadius: 10,
+    borderRadius: 8,
     width: "100%",
-    height: 50,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: Colours.highlight.secondary,
+    marginBottom: 8,
   },
   googleButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: Colours.neutral.dark1,
+    fontSize: 16,
   },
 });
 

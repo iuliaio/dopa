@@ -72,7 +72,10 @@ export default function App() {
           <Stack.Screen
             name="SingleTask"
             component={SingleTaskScreen}
-            options={{ title: "Task Details" }}
+            options={({ route }) => ({
+              title: route.params?.taskId ?? "Task Details",
+              headerTitle: "",
+            })}
           />
           <Stack.Screen
             name="Settings"

@@ -32,7 +32,7 @@ const CustomInput = ({
 }: CustomInputProps) => {
   return (
     <View>
-      <BaseText style={styles.label}>{label}</BaseText>
+      {label && <BaseText style={styles.label}>{label}</BaseText>}
       <View style={styles.passwordContainer}>
         <TextInput
           style={[
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Fonts.inter.semiBold,
     color: Colours.neutral.dark1,
+    marginBottom: 8,
   },
   input: {
     width: "100%",

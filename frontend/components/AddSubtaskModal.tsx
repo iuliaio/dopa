@@ -6,13 +6,18 @@ import {
   Modal,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { BaseText, CustomInput } from ".";
 import { Subtask, Task } from "../../backend/src/models/types";
-
-const MAX_SECONDS = 10800;
+import {
+  calculateTotalSeconds,
+  formatTimeValue,
+  MAX_SECONDS,
+  parseTimeValue,
+  secondsToTime,
+} from "../utils/timeUtils";
 
 const AddSubtaskModal = ({
   isOpen,
@@ -29,47 +34,66 @@ const AddSubtaskModal = ({
   newSubtaskName: string;
   setNewSubtaskName: (newSubtaskName: string) => void;
   localTask: Task;
-  setLocalTask: (task: Task) => void;
+  setLocalTask?: (task: Task) => void;
 }) => {
   const [hours, setHours] = useState("");
   const [minutes, setMinutes] = useState("");
   const [seconds, setSeconds] = useState("");
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  const addQuickTime = (secs: number) => {
-    let total =
-      (parseInt(hours) || 0) * 3600 +
-      (parseInt(minutes) || 0) * 60 +
-      (parseInt(seconds) || 0);
-    total = Math.min(total + secs, MAX_SECONDS);
+  const addQuickTime = (additionalSeconds: number) => {
+    const currentH = parseTimeValue(hours, 3);
+    const currentM = parseTimeValue(minutes, 59);
+    const currentS = parseTimeValue(seconds, 59);
 
-    setHours(String(Math.floor(total / 3600)));
-    setMinutes(String(Math.floor((total % 3600) / 60)));
-    setSeconds(String(total % 60));
+    const totalSeconds = calculateTotalSeconds(currentH, currentM, currentS);
+    const newTotal = Math.min(totalSeconds + additionalSeconds, MAX_SECONDS);
+
+    const { hours: h, minutes: m, seconds: s } = secondsToTime(newTotal);
+    setHours(formatTimeValue(h));
+    setMinutes(formatTimeValue(m));
+    setSeconds(formatTimeValue(s));
+  };
+
+  const handleTimeInput = (
+    value: string,
+    setter: (value: string) => void,
+    maxValue: number
+  ) => {
+    const num = parseTimeValue(value, maxValue);
+    setter(num ? formatTimeValue(num) : "");
   };
 
   const handleCloseModal = () => {
     setIsOpen(false);
+    setNewSubtaskName("");
+    setHours("");
+    setMinutes("");
+    setSeconds("");
+    setFocusedInput(null);
   };
 
-  const handleSaveNewSubtask = async () => {
-    const h = parseInt(hours, 10) || 0;
-    const m = parseInt(minutes, 10) || 0;
-    const s = parseInt(seconds, 10) || 0;
+  const handleAddSubtask = async () => {
+    if (!newSubtaskName.trim()) {
+      return;
+    }
 
-    const totalSeconds = Math.min(h * 3600 + m * 60 + s, MAX_SECONDS);
+    const h = parseTimeValue(hours, 3);
+    const m = parseTimeValue(minutes, 59);
+    const s = parseTimeValue(seconds, 59);
+    const totalSeconds = calculateTotalSeconds(h, m, s);
 
-    try {
-      const updated = await addSubtask(localTask, {
-        name: newSubtaskName,
-        duration: totalSeconds.toString(),
-      });
+    const newSubtask: Partial<Subtask> = {
+      name: newSubtaskName.trim(),
+      duration: totalSeconds.toString(),
+      status: "PENDING",
+    };
 
-      if (updated) {
-        setLocalTask(updated);
-        setIsOpen(false);
-      }
-    } catch (err) {
-      console.error("Error saving new subtask:", err);
+    const updatedTask = await addSubtask(localTask, newSubtask);
+    if (updatedTask) {
+      setLocalTask?.(updatedTask);
+      setNewSubtaskName("");
+      setIsOpen(false);
     }
   };
 
@@ -84,69 +108,89 @@ const AddSubtaskModal = ({
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>Add New Subtask</Text>
 
-          <TextInput
-            style={styles.textInput}
+          <CustomInput
             placeholder="Subtask Name"
             value={newSubtaskName}
             onChangeText={setNewSubtaskName}
           />
 
+          <BaseText
+            size={14}
+            style={{
+              textAlign: "center",
+              color: Colours.support.warning.primary,
+            }}
+          >
+            The subtask shouldn't take more than 3 hours. If it does, try to
+            break it down into smaller subtasks.
+          </BaseText>
           <View style={styles.durationContainer}>
-            <TextInput
+            <CustomInput
               style={styles.durationInput}
               value={hours}
-              onChangeText={(text) => {
-                const num = Math.min(parseInt(text || ""), 3);
-                setHours(num ? num.toString() : "");
-              }}
+              onChangeText={(text) => handleTimeInput(text, setHours, 3)}
               keyboardType="numeric"
               maxLength={1}
               placeholder="HH"
+              isFocused={focusedInput === "hours"}
+              onFocus={() => setFocusedInput("hours")}
+              onBlur={() => setFocusedInput(null)}
             />
             <Text style={styles.separator}>:</Text>
-            <TextInput
+            <CustomInput
               style={styles.durationInput}
               value={minutes}
-              onChangeText={(text) => {
-                const num = Math.min(parseInt(text || ""), 59);
-                setMinutes(num ? num.toString() : "");
-              }}
+              onChangeText={(text) => handleTimeInput(text, setMinutes, 59)}
               keyboardType="numeric"
               maxLength={2}
               placeholder="MM"
+              isFocused={focusedInput === "minutes"}
+              onFocus={() => setFocusedInput("minutes")}
+              onBlur={() => setFocusedInput(null)}
             />
             <Text style={styles.separator}>:</Text>
-            <TextInput
+            <CustomInput
               style={styles.durationInput}
               value={seconds}
-              onChangeText={(text) => {
-                const num = Math.min(parseInt(text || ""), 59);
-                setSeconds(num ? num.toString() : "");
-              }}
+              onChangeText={(text) => handleTimeInput(text, setSeconds, 59)}
               keyboardType="numeric"
               maxLength={2}
               placeholder="SS"
+              isFocused={focusedInput === "seconds"}
+              onFocus={() => setFocusedInput("seconds")}
+              onBlur={() => setFocusedInput(null)}
             />
           </View>
 
           <View style={styles.quickAddContainer}>
             {[
-              { label: "+30s", value: 30 },
-              { label: "+1m", value: 60 },
               { label: "+5m", value: 300 },
+              { label: "+10m", value: 600 },
+              { label: "+30m", value: 1800 },
+              { label: "+1h", value: 3600 },
             ].map(({ label, value }) => (
               <TouchableOpacity
                 key={label}
                 onPress={() => addQuickTime(value)}
                 style={styles.quickAddButton}
               >
-                <Text style={styles.quickAddText}>{label}</Text>
+                <BaseText variant="semiBold" style={styles.quickAddText}>
+                  {label}
+                </BaseText>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Button title="Save" onPress={handleSaveNewSubtask} />
-          <Button title="Cancel" onPress={handleCloseModal} />
+          <View style={styles.buttonsContainer}>
+            <Button title="Cancel" onPress={handleCloseModal} />
+            <Button
+              title="Save"
+              onPress={handleAddSubtask}
+              disabled={
+                !newSubtaskName.trim() || (!hours && !minutes && !seconds)
+              }
+            />
+          </View>
         </View>
       </View>
     </Modal>
@@ -173,11 +217,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     elevation: 5,
+    gap: 8,
   },
   modalTitle: {
     fontSize: 20,
     fontFamily: Fonts.inter.bold,
-    marginBottom: 15,
+    marginBottom: 16,
   },
   textInput: {
     borderColor: Colours.neutral.light,
@@ -192,13 +237,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   quickAddButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: Colours.neutral.secondary,
     padding: 10,
     marginHorizontal: 5,
     borderRadius: 5,
+    minWidth: 65,
   },
   quickAddText: {
-    color: "white",
+    color: Colours.neutral.lightest,
+    textAlign: "center",
   },
   durationContainer: {
     flexDirection: "row",
@@ -207,16 +254,19 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   durationInput: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
     width: 50,
     textAlign: "center",
     fontSize: 16,
+    padding: 10,
   },
   separator: {
     fontSize: 18,
     marginHorizontal: 4,
+  },
+  buttonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 12,
   },
 });

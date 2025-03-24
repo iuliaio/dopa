@@ -1,7 +1,7 @@
 import { Fonts } from "@/assets/fonts";
-import { CustomInput } from "@/components";
+import { BaseText, CustomInput } from "@/components";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colours } from "../../assets/colours";
 import { auth } from "../../config";
@@ -29,10 +29,18 @@ const ForgotPasswordScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Forgot Password</Text>
+      <BaseText style={styles.title}>Forgot your password?</BaseText>
+      <View style={styles.descriptionContainer}>
+        <BaseText>
+          Enter your registered email address and we will send you a link to
+          reset it.
+        </BaseText>
+        <BaseText size={14}>
+          Please check your spam folder if you do not see the email in your
+          inbox.
+        </BaseText>
+      </View>
       <CustomInput
-        label="Enter your email address and we'll send you a link to reset your
-        password."
         isFocused={focusedInput}
         placeholder="Email Address"
         value={email}
@@ -75,6 +83,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontFamily: Fonts.inter.semiBold,
+  },
+  descriptionContainer: {
+    gap: 4,
   },
 });
 

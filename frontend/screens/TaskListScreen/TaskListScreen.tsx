@@ -1,6 +1,5 @@
 import { RootStackParamList } from "@/app";
 import {
-  BaseText,
   NewTaskModal,
   ScheduledTasksCalendar,
   TaskListTypeTabs,
@@ -9,16 +8,14 @@ import SingleTaskCard from "@/components/SingleTaskCard";
 import { useAddTask } from "@/hooks/useAddTask";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useTasks } from "@/hooks/useTasks";
+import { normalizeDate } from "@/utils/dateUtils";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { format } from "date-fns";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { Task } from "../../../backend/src/models/types";
@@ -59,16 +56,6 @@ const TaskListScreen = () => {
   });
   const [showGoogleAuthPrompt, setShowGoogleAuthPrompt] = useState(false);
 
-  const normalizeDate = (scheduleDate: any) => {
-    if (!scheduleDate) return null;
-
-    if (typeof scheduleDate === "object" && scheduleDate._seconds) {
-      return format(new Date(scheduleDate._seconds * 1000), "yyyy-MM-dd");
-    }
-
-    return null;
-  };
-
   const filteredTasks = tasks.filter((task) => {
     if (taskListType !== "Scheduled") {
       return task.scheduleDate === undefined;
@@ -99,7 +86,6 @@ const TaskListScreen = () => {
           { id: "", name: subtaskName, status: "PENDING", duration: "" },
         ],
       });
-      setShowGoogleAuthPrompt(true);
       return;
     }
 
@@ -168,94 +154,10 @@ const TaskListScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.taskList}
       />
-
+      {addTaskLoading && <Text style={styles.loadingText}>Adding task...</Text>}
       {addTaskError && <Text style={styles.errorText}>{addTaskError}</Text>}
 
-      {/* Google Authentication Prompt Modal */}
-      <Modal
-        animationType="slide"
-        transparent
-        visible={showGoogleAuthPrompt}
-        onRequestClose={() => setShowGoogleAuthPrompt(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <BaseText variant="semiBold" size={16}>
-              Connect to Google Calendar?
-            </BaseText>
-            <BaseText size={14}>
-              To add this task to your Google Calendar, you need to connect your
-              account.
-            </BaseText>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setShowGoogleAuthPrompt(false);
-                  addTask(
-                    newTask.name,
-                    newTask.scheduleDate ?? undefined,
-                    newTask.scheduleTime ?? undefined,
-                    newTask.subtasks[0].name
-                  );
-                  setNewTask({
-                    id: "",
-                    name: "",
-                    scheduleDate: undefined,
-                    scheduleTime: undefined,
-                    subtasks: [
-                      { id: "", name: "", status: "PENDING", duration: "" },
-                    ],
-                    description: "",
-                    status: "PENDING",
-                  });
-                  setModalVisible(false);
-                }}
-              >
-                <Text style={styles.modalButtonText}>Skip</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
-                onPress={async () => {
-                  const success = await signInWithGoogle();
-                  setShowGoogleAuthPrompt(false);
-
-                  if (success) {
-                    await loadSavedToken();
-                    addTask(
-                      newTask.name,
-                      newTask.scheduleDate ?? undefined,
-                      newTask.scheduleTime ?? undefined,
-                      newTask.subtasks[0].name
-                    );
-                    setNewTask({
-                      id: "",
-                      name: "",
-                      scheduleDate: undefined,
-                      scheduleTime: undefined,
-                      subtasks: [
-                        { id: "", name: "", status: "PENDING", duration: "" },
-                      ],
-                      description: "",
-                      status: "PENDING",
-                    });
-                    setModalVisible(false);
-                  }
-                }}
-              >
-                <Text style={styles.modalButtonText}>Connect</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <NewTaskModal
-        selectedDate={selectedDate}
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        onAddTask={handleAddTask}
-      />
+      <NewTaskModal selectedDate={selectedDate} onAddTask={handleAddTask} />
     </View>
   );
 };
@@ -316,6 +218,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     gap: 6,
+  },
+  loadingText: {
+    color: Colours.neutral.dark1,
+    fontFamily: Fonts.inter.semiBold,
+    fontSize: 16,
   },
 });
 
