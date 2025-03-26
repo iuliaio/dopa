@@ -88,6 +88,16 @@ export const useUpdateTask = () => {
       ),
     };
 
+    // Check if all subtasks are completed
+    const allSubtasksCompleted = updatedTask.subtasks.every(
+      (subtask) => subtask.status === "COMPLETED"
+    );
+
+    // If all subtasks are completed, update the task status to COMPLETED
+    if (allSubtasksCompleted && updatedTask.status !== "COMPLETED") {
+      updatedTask.status = "COMPLETED";
+    }
+
     return updateTask(updatedTask);
   };
 

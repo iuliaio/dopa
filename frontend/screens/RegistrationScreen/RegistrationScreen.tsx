@@ -159,16 +159,16 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: Colours.neutral.white,
+    gap: 8,
   },
   title: {
     fontFamily: Fonts.inter.bold,
     color: Colours.neutral.dark1,
-    marginBottom: 8,
   },
   subtitle: {
     fontSize: 12,
     color: Colours.neutral.dark3,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   checkboxContainer: {
     flexDirection: "row",

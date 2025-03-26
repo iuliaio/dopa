@@ -6,10 +6,13 @@ import {
 } from "@/components";
 import SingleTaskCard from "@/components/SingleTaskCard";
 import { useAddTask } from "@/hooks/useAddTask";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { useTasks } from "@/hooks/useTasks";
 import { normalizeDate } from "@/utils/dateUtils";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import {
+  NavigationProp,
+  useFocusEffect,
+  useNavigation,
+} from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -18,7 +21,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { Task } from "../../../backend/src/models/types";
 import { Colours } from "../../assets/colours";
 import { Fonts } from "../../assets/fonts";
 
@@ -38,73 +40,49 @@ const TaskListScreen = () => {
     error: addTaskError,
   } = useAddTask();
 
-  const { calendarAccessToken, signInWithGoogle, loadSavedToken } =
-    useGoogleAuth();
-
   const [taskListType, setTaskListType] = useState<TaskList>("Scheduled");
-  const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | undefined>(
     undefined
   );
-  const [newTask, setNewTask] = useState<Task>({
-    id: "",
-    name: "",
-    scheduleDate: selectedDate ?? undefined,
-    subtasks: [{ id: "", name: "", status: "PENDING", duration: "" }],
-    description: "",
-    status: "PENDING",
-  });
-  const [showGoogleAuthPrompt, setShowGoogleAuthPrompt] = useState(false);
 
-  const filteredTasks = tasks.filter((task) => {
-    if (taskListType !== "Scheduled") {
-      return task.scheduleDate === undefined;
-    }
+  const filteredTasks = tasks
+    .filter((task) => {
+      if (taskListType === "Anytime") {
+        return task.scheduleDate === undefined || task.scheduleDate === null;
+      }
 
-    if (!selectedDate) {
-      return task.scheduleDate !== undefined;
-    }
-
-    const taskDate = normalizeDate(task.scheduleDate);
-    return taskDate === selectedDate;
-  });
+      const taskDate = normalizeDate(task.scheduleDate);
+      return taskDate === selectedDate;
+    })
+    .filter((task) => task.status !== "COMPLETED");
 
   const handleAddTask = async (
     taskName: string,
     subtaskName: string,
-    time?: string
+    time?: string,
+    description?: string
   ) => {
     if (!taskName.trim()) return;
 
-    if (selectedDate && !calendarAccessToken) {
-      setNewTask({
-        ...newTask,
-        name: taskName,
-        scheduleDate: selectedDate,
-        scheduleTime: time,
-        subtasks: [
-          { id: "", name: subtaskName, status: "PENDING", duration: "" },
-        ],
-      });
-      return;
-    }
-
     try {
-      await addTask(taskName, selectedDate, time, subtaskName);
-      setNewTask({
-        id: "",
-        name: "",
-        scheduleDate: selectedDate ?? undefined,
-        subtasks: [{ id: "", name: "", status: "PENDING", duration: "" }],
-        description: "",
-        status: "PENDING",
-      });
-      setModalVisible(false);
+      await addTask(
+        taskName,
+        taskListType === "Scheduled" ? selectedDate : undefined,
+        time,
+        subtaskName,
+        description
+      );
       await refetchTasks();
     } catch (error) {
       console.error("Error adding task:", error);
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchTasks();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -121,14 +99,7 @@ const TaskListScreen = () => {
         <View style={styles.calendarContainer}>
           <ScheduledTasksCalendar
             selectedDate={selectedDate}
-            setSelectedDate={(date) => {
-              setSelectedDate(date);
-              setModalVisible(true);
-              setNewTask((prev) => ({
-                ...prev,
-                scheduleDate: date,
-              }));
-            }}
+            setSelectedDate={setSelectedDate}
           />
         </View>
       )}
@@ -157,7 +128,11 @@ const TaskListScreen = () => {
       {addTaskLoading && <Text style={styles.loadingText}>Adding task...</Text>}
       {addTaskError && <Text style={styles.errorText}>{addTaskError}</Text>}
 
-      <NewTaskModal selectedDate={selectedDate} onAddTask={handleAddTask} />
+      <NewTaskModal
+        selectedDate={selectedDate}
+        taskListType={taskListType}
+        onAddTask={handleAddTask}
+      />
     </View>
   );
 };

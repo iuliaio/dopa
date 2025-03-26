@@ -46,13 +46,6 @@ const SingleTaskScreen = () => {
     }
   }, [task?.name, navigation]);
 
-  useEffect(() => {
-    // Refresh task data when activeSubtaskId changes
-    if (activeSubtaskId) {
-      refetchTask();
-    }
-  }, [activeSubtaskId]);
-
   if (!taskId || !task)
     return (
       <View

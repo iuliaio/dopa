@@ -7,7 +7,12 @@ export const MAX_SECONDS = 10800; // 3 hours in seconds
  * @returns The parsed number, capped at max
  */
 export const parseTimeValue = (value: string, max: number): number => {
-  const parsed = parseInt(value || "0", 10);
+  // Return 0 for empty or invalid input
+  if (!value || value.includes(".")) {
+    return 0;
+  }
+
+  const parsed = parseInt(value, 10);
   return isNaN(parsed) ? 0 : Math.min(parsed, max);
 };
 

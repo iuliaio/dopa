@@ -2,6 +2,7 @@ import { RootStackParamList } from "@/app";
 import { BaseText, CustomInput } from "@/components";
 import { auth } from "@/config/firebase";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
 import { sendPasswordResetEmail, signOut, updateProfile } from "firebase/auth";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -81,6 +82,7 @@ const SettingsScreen = () => {
 
   const handleLogout = async () => {
     try {
+      await SecureStore.deleteItemAsync("googleAccessToken");
       await signOut(auth);
       navigation.navigate("Login");
     } catch (error) {

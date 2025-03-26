@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Task } from "../../backend/src/models/types";
 import { API_URL } from "../config";
 
@@ -7,7 +7,7 @@ export const useTasks = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -23,11 +23,11 @@ export const useTasks = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
 
   return { tasks, isLoading, error, refetchTasks: fetchTasks };
 };

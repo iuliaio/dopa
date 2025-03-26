@@ -1,15 +1,3 @@
-// import { Stack } from "expo-router";
-
-// export default function RootLayout() {
-//   return (
-//     <Stack
-//       screenOptions={{
-//         headerShown: false,
-//       }}
-//     />
-//   );
-// }
-
 import {
   Inter_400Regular,
   Inter_600SemiBold,

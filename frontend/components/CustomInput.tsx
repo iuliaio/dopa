@@ -20,6 +20,7 @@ type CustomInputProps = {
   isTextVisible?: boolean;
   onIconPress?: () => void;
   style?: StyleProp<ViewStyle | TextStyle>;
+  testID?: string;
 } & TextInputProps;
 
 const CustomInput = ({
@@ -28,6 +29,7 @@ const CustomInput = ({
   isTextVisible = true,
   onIconPress,
   style,
+  testID,
   ...props
 }: CustomInputProps) => {
   return (
@@ -44,11 +46,16 @@ const CustomInput = ({
             },
             style,
           ]}
+          testID={testID}
           secureTextEntry={!isTextVisible}
           {...props}
         />
         {!!onIconPress && (
-          <TouchableOpacity onPress={onIconPress} style={styles.eyeIcon}>
+          <TouchableOpacity
+            onPress={onIconPress}
+            style={styles.eyeIcon}
+            testID="eye-button"
+          >
             <BaseText>
               {isTextVisible ? (
                 <Feather

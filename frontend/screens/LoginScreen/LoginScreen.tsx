@@ -5,7 +5,14 @@ import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Colours } from "../../assets/colours";
 import { auth } from "../../config";
 
@@ -17,7 +24,7 @@ const LoginScreen = () => {
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  const { user, promptAsync } = useGoogleAuth(); // Hook for Google login
+  const { user, promptAsync } = useGoogleAuth();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -45,7 +52,7 @@ const LoginScreen = () => {
         console.log("Google Sign-In Successful");
 
         // Firebase Auth is handled inside useGoogleAuth.ts, so no need to sign in here
-        navigation.navigate("TaskList"); // ✅ Navigate after login
+        navigation.navigate("TaskList");
       } else {
         console.warn("Google Sign-In Cancelled");
       }
@@ -57,7 +64,12 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header} />
+      <View style={styles.header}>
+        <Image
+          source={require("@/assets/images/dopa.jpeg")}
+          style={styles.logo}
+        />
+      </View>
       <View style={styles.content}>
         <Text style={styles.title}>Welcome!</Text>
         <CustomInput
@@ -126,6 +138,10 @@ const styles = StyleSheet.create({
   header: {
     flex: 2,
     backgroundColor: Colours.neutral.light,
+  },
+  logo: {
+    width: "100%",
+    height: "100%",
   },
   content: {
     flex: 3,

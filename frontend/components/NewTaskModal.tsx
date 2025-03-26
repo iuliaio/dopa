@@ -11,28 +11,41 @@ import {
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { Colours } from "../assets/colours";
+import { TaskListType } from "../types/Types";
 import BaseText from "./BaseText";
 import CustomInput from "./CustomInput";
 
 type NewTaskModalProps = {
   selectedDate: string | undefined;
-  onAddTask: (taskName: string, subtaskName: string, time?: string) => void;
+  taskListType: TaskListType;
+  onAddTask: (
+    taskName: string,
+    subtaskName: string,
+    time?: string,
+    description?: string
+  ) => void;
 };
 
-const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
+const NewTaskModal = ({
+  selectedDate,
+  taskListType,
+  onAddTask,
+}: NewTaskModalProps) => {
   const [taskName, setTaskName] = useState("");
   const [subtaskName, setSubtaskName] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedTime, setSelectedTime] = useState<Date | undefined>(undefined);
   const [isFullyExpanded, setIsFullyExpanded] = useState(false);
 
-  const modalHeight = useRef(new Animated.Value(70)).current;
-  const currentHeight = useRef(70);
-  const maxHeight = 600;
+  const maxHeight = 650;
   const minHeight = 70;
+  const modalHeight = useRef(new Animated.Value(70)).current;
+  const currentHeight = useRef(minHeight);
 
   const resetForm = () => {
     setTaskName("");
     setSubtaskName("");
+    setDescription("");
     setSelectedTime(undefined);
     setIsFullyExpanded(false);
   };
@@ -51,7 +64,7 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
   };
 
   const expandModal = () => {
-    if (!selectedDate) return;
+    if (taskListType === "Scheduled" && !selectedDate) return;
 
     currentHeight.current = maxHeight;
     setIsFullyExpanded(true);
@@ -65,7 +78,12 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
 
   const handleAddTask = () => {
     if (!taskName.trim()) return;
-    onAddTask(taskName, subtaskName, selectedTime?.toLocaleTimeString());
+    onAddTask(
+      taskName,
+      subtaskName,
+      selectedTime?.toLocaleTimeString(),
+      description
+    );
     closeModal();
   };
 
@@ -74,7 +92,7 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderMove: (_, gestureState) => {
-        if (!selectedDate) return;
+        if (taskListType === "Scheduled" && !selectedDate) return;
 
         const newHeight = Math.max(
           minHeight,
@@ -88,7 +106,7 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
         }).start();
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (!selectedDate) return;
+        if (taskListType === "Scheduled" && !selectedDate) return;
 
         const shouldOpen =
           gestureState.dy < -50 || currentHeight.current > maxHeight / 2;
@@ -100,6 +118,10 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
       },
     })
   ).current;
+
+  const canExpand =
+    taskListType === "Anytime" ||
+    (taskListType === "Scheduled" && selectedDate);
 
   return (
     <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
@@ -115,14 +137,14 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
         {!isFullyExpanded && (
           <TouchableOpacity
             style={styles.peekContent}
-            onPress={selectedDate ? expandModal : undefined}
-            activeOpacity={selectedDate ? 0.7 : 1}
+            onPress={canExpand ? expandModal : undefined}
+            activeOpacity={canExpand ? 0.7 : 1}
           >
             <Feather
               name="plus"
               size={24}
               color={
-                selectedDate
+                canExpand
                   ? Colours.highlight.primary
                   : Colours.neutral.quaternary
               }
@@ -131,12 +153,14 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
               size={16}
               variant="semiBold"
               style={{
-                color: selectedDate
+                color: canExpand
                   ? Colours.neutral.dark1
                   : Colours.neutral.quaternary,
               }}
             >
-              {selectedDate ? "Add new task" : "Select date to add a new task"}
+              {taskListType === "Scheduled" && !selectedDate
+                ? "Select date to add a new task"
+                : "Add new task"}
             </BaseText>
           </TouchableOpacity>
         )}
@@ -160,21 +184,30 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
             </TouchableOpacity>
           </View>
 
-          <View style={{ paddingBottom: 12 }}>
-            <BaseText
-              size={18}
-              variant="semiBold"
-              style={{ color: Colours.neutral.dark1 }}
-            >
-              {selectedDate && formatScheduleDate(selectedDate)}
-            </BaseText>
-          </View>
+          {taskListType === "Scheduled" && selectedDate && (
+            <View style={{ paddingBottom: 12 }}>
+              <BaseText
+                size={18}
+                variant="semiBold"
+                style={{ color: Colours.neutral.dark1 }}
+              >
+                {formatScheduleDate(selectedDate)}
+              </BaseText>
+            </View>
+          )}
 
           <View style={{ gap: 16 }}>
             <CustomInput
               placeholder="Task name"
               value={taskName}
               onChangeText={setTaskName}
+            />
+            <CustomInput
+              placeholder="Description (optional)"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
             />
             <CustomInput
               label="Choose the first subtask to get you started"
@@ -184,27 +217,29 @@ const NewTaskModal = ({ selectedDate, onAddTask }: NewTaskModalProps) => {
             />
           </View>
 
-          <View>
-            <BaseText
-              size={16}
-              variant="semiBold"
-              style={{ color: Colours.neutral.dark1, marginTop: 12 }}
-            >
-              Time
-            </BaseText>
-            <View style={styles.timePickerSection}>
-              <DateTimePicker
-                value={selectedTime || new Date()}
-                mode="time"
-                display="spinner"
-                onChange={(event, time) => {
-                  if (event.type === "set" && time) {
-                    setSelectedTime(time);
-                  }
-                }}
-              />
+          {taskListType === "Scheduled" && (
+            <View>
+              <BaseText
+                size={16}
+                variant="semiBold"
+                style={{ color: Colours.neutral.dark1, marginTop: 12 }}
+              >
+                Time
+              </BaseText>
+              <View style={styles.timePickerSection}>
+                <DateTimePicker
+                  value={selectedTime || new Date()}
+                  mode="time"
+                  display="spinner"
+                  onChange={(event, time) => {
+                    if (event.type === "set" && time) {
+                      setSelectedTime(time);
+                    }
+                  }}
+                />
+              </View>
             </View>
-          </View>
+          )}
 
           <TouchableOpacity
             style={[

@@ -49,7 +49,8 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
         completeTimer();
       },
       addFiveMinutes: () => {
-        const newTime = timeLeft + 300; // Add 5 minutes (300 seconds)
+        const fiveMinutes = 300;
+        const newTime = timeLeft + fiveMinutes;
         setTimeLeft(newTime);
         if (isActive) {
           handleSaveTimeLeft(newTime, "IN_PROGRESS");
@@ -65,8 +66,10 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
         interval = setInterval(() => {
           setTimeLeft((time) => {
             const newTime = time - 1;
-            // Notify parent about time updates when active
-            onActiveChange?.(subtask, true, newTime);
+            // Only notify parent about time updates when the timer is paused or completed
+            if (newTime === 0) {
+              onActiveChange?.(subtask, false, newTime);
+            }
             return newTime;
           });
         }, 1000);
@@ -130,12 +133,20 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
       <View style={styles.subtaskContainer}>
         <View style={styles.buttonGroup}>
           {!isCompleted && !isActive && (
-            <TouchableOpacity onPress={startTimer} style={styles.playButton}>
+            <TouchableOpacity
+              onPress={startTimer}
+              style={styles.playButton}
+              testID="play-button"
+            >
               <Feather name="play" size={20} color={Colours.neutral.light} />
             </TouchableOpacity>
           )}
           {!isCompleted && isActive && (
-            <TouchableOpacity onPress={pauseTimer} style={styles.pauseButton}>
+            <TouchableOpacity
+              onPress={pauseTimer}
+              style={styles.pauseButton}
+              testID="pause-button"
+            >
               <Feather
                 name="pause"
                 size={20}
@@ -147,6 +158,7 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
             <TouchableOpacity
               onPress={completeTimer}
               style={styles.completeButton}
+              testID="complete-button"
             >
               <Feather
                 name="check"
@@ -157,19 +169,22 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
           )}
         </View>
         <View style={styles.textContainer}>
-          <Text style={[styles.nameText, isCompleted && styles.completedText]}>
+          <Text
+            style={[styles.nameText, isCompleted && styles.completedText]}
+            numberOfLines={2}
+          >
             {subtask.name}
           </Text>
           <Text style={styles.timerText}>{formatTime()}</Text>
         </View>
-        <TouchableOpacity onPress={resetTimer}>
+        <TouchableOpacity onPress={resetTimer} testID="reset-button">
           <Feather
             name="refresh-cw"
             size={20}
             color={Colours.highlight.primary}
           />
         </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete}>
+        <TouchableOpacity onPress={onDelete} testID="delete-button">
           <Feather name="trash" size={20} color={Colours.highlight.primary} />
         </TouchableOpacity>
       </View>
@@ -213,11 +228,13 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
     marginLeft: 12,
+    marginRight: 8,
   },
   nameText: {
     fontSize: 16,
     fontFamily: Fonts.inter.semiBold,
     color: Colours.neutral.dark2,
+    flexShrink: 1,
   },
   completedText: {
     textDecorationLine: "line-through",

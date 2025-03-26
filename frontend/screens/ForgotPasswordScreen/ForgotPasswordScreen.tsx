@@ -64,12 +64,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colours.neutral.white,
     padding: 20,
+    gap: 8,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     color: Colours.neutral.dark1,
-    marginBottom: 48,
+    marginBottom: 44,
   },
   resetButton: {
     backgroundColor: Colours.highlight.primary,

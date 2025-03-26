@@ -89,7 +89,8 @@ export const useAddTask = () => {
     name: string,
     scheduleDate?: string,
     scheduleTime?: string,
-    firstSubtaskName?: string
+    firstSubtaskName?: string,
+    description?: string
   ): Promise<void> => {
     if (name.trim() === "") return;
 
@@ -104,7 +105,9 @@ export const useAddTask = () => {
         const [hours, minutes] = scheduleTime.split(":");
         date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
       } else {
-        date.setHours(0, 0, 0, 0);
+        // Use current time if no specific time is provided
+        const now = new Date();
+        date.setHours(now.getHours(), now.getMinutes(), 0, 0);
       }
       formattedScheduleDate = date.toISOString();
     }
@@ -117,7 +120,7 @@ export const useAddTask = () => {
 
     const taskData: Omit<Task, "id"> = {
       name,
-      description: "Enter description",
+      description: description || "",
       subtasks: firstSubtaskName
         ? [
             {
