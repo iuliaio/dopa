@@ -177,16 +177,18 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
           </Text>
           <Text style={styles.timerText}>{formatTime()}</Text>
         </View>
-        <TouchableOpacity onPress={resetTimer} testID="reset-button">
-          <Feather
-            name="refresh-cw"
-            size={20}
-            color={Colours.highlight.primary}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onDelete} testID="delete-button">
-          <Feather name="trash" size={20} color={Colours.highlight.primary} />
-        </TouchableOpacity>
+        <View style={{ display: "flex", flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity onPress={resetTimer} testID="reset-button">
+            <Feather
+              name="refresh-cw"
+              size={20}
+              color={Colours.highlight.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onDelete} testID="delete-button">
+            <Feather name="trash" size={20} color={Colours.highlight.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }

@@ -33,6 +33,22 @@ const SingleTaskScreen = () => {
   const activeTimerRef = useRef<TimerHandle | null>(null);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeSubtaskId && activeSubtaskTime > 0) {
+      interval = setInterval(() => {
+        setActiveSubtaskTime((prevTime) => {
+          if (prevTime <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [activeSubtaskId, activeSubtaskTime]);
+
+  useEffect(() => {
     // Set the header title to the task name
     if (task?.name) {
       navigation.setOptions({

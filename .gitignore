@@ -2,3 +2,4 @@ node_modules
 dist
 .env
 expo-env.d.ts
+backend/src/config/service-account.json

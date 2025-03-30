@@ -89,13 +89,19 @@ export const useUpdateTask = () => {
     };
 
     // Check if all subtasks are completed
-    const allSubtasksCompleted = updatedTask.subtasks.every(
-      (subtask) => subtask.status === "COMPLETED"
-    );
+    const allSubtasksCompleted =
+      updatedTask.subtasks.length > 0 &&
+      updatedTask.subtasks.every((subtask) => subtask.status === "COMPLETED");
 
-    // If all subtasks are completed, update the task status to COMPLETED
-    if (allSubtasksCompleted && updatedTask.status !== "COMPLETED") {
+    // Update task status based on subtask completion
+    if (allSubtasksCompleted) {
       updatedTask.status = "COMPLETED";
+    } else if (
+      updatedTask.subtasks.some((subtask) => subtask.status === "IN_PROGRESS")
+    ) {
+      updatedTask.status = "IN_PROGRESS";
+    } else {
+      updatedTask.status = "PENDING";
     }
 
     return updateTask(updatedTask);
