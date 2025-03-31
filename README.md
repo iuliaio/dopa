@@ -46,18 +46,12 @@ Before you begin, ensure you have the following installed:
    npm install
    ```
 
-3. Install iOS dependencies:
-
-   ```bash
-   cd ios
-   pod install
-   cd ..
-   ```
-
-4. Start the frontend development server:
+3. Start the frontend development server:
    ```bash
    npm start
    ```
+
+Select "i" to open iOS simulator
 
 Note: The backend server is already deployed on Google Cloud Platform (GCP). You can ignore the `backend` folder as it's not needed for local development. The frontend app is already configured to connect to the deployed backend.
 
