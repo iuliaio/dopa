@@ -25,6 +25,7 @@ export const useTasks = () => {
     }
   }, []);
 
+  // Fetch tasks on component mount
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);

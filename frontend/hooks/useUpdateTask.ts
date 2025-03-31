@@ -2,15 +2,20 @@ import { useState } from "react";
 import { Subtask, Task } from "../../backend/src/models/types";
 import { API_URL } from "../config";
 
+// Hook for managing task updates with backend synchronization
+// Handles task state updates, subtask management, and Google Calendar integration
 export const useUpdateTask = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Core function to update task state and sync with backend
+  // Handles date normalization and data cleaning before sending to server
   const updateTask = async (updatedTask: Task) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Clean and normalize task data before sending to backend
       const cleanTask = {
         ...updatedTask,
         scheduleDate:
@@ -36,7 +41,7 @@ export const useUpdateTask = () => {
 
       const updatedTaskResponse = await response.json();
 
-      // If a scheduleDate exists, sync with Google Calendar
+      // Sync with Google Calendar if task has a schedule date
       if (cleanTask.scheduleDate) {
         await fetch(`${API_URL}/api/tasks/${updatedTask.id}/sync-calendar`, {
           method: "POST",
@@ -53,6 +58,8 @@ export const useUpdateTask = () => {
     }
   };
 
+  // Add a new subtask to an existing task
+  // Generates a unique ID using timestamp for new subtasks
   const addSubtask = async (task: Task, newSubtask: Partial<Subtask>) => {
     if (!task.id) {
       console.error("Error: Task ID is missing.");
@@ -75,6 +82,8 @@ export const useUpdateTask = () => {
     return updateTask(updatedTask);
   };
 
+  // Update a specific subtask and handle task status updates
+  // Task status is derived from the collective state of its subtasks
   const updateSubtask = async (task: Task, updatedSubtask: Subtask) => {
     if (!task.id) {
       console.error("Error: Task ID is missing.");
@@ -88,12 +97,12 @@ export const useUpdateTask = () => {
       ),
     };
 
-    // Check if all subtasks are completed
+    // Determine task status based on subtask states
     const allSubtasksCompleted =
       updatedTask.subtasks.length > 0 &&
       updatedTask.subtasks.every((subtask) => subtask.status === "COMPLETED");
 
-    // Update task status based on subtask completion
+    // Update parent task status based on subtask completion
     if (allSubtasksCompleted) {
       updatedTask.status = "COMPLETED";
     } else if (
@@ -107,6 +116,7 @@ export const useUpdateTask = () => {
     return updateTask(updatedTask);
   };
 
+  // Remove a subtask from a task
   const deleteSubtask = async (task: Task, subtaskId: string) => {
     if (!task.id) {
       console.error("Error: Task ID is missing.");

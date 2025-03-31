@@ -17,11 +17,15 @@ export const useGoogleAuth = () => {
   );
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Determine the correct redirect URI based on platform
+  // iOS and Android have different OAuth configurations
   const REDIRECT_URI =
     Platform.OS === "ios"
       ? OAUTH_GOOGLE_IOS_REDIRECT_URI
       : FIREBASE_REDIRECT_URI;
 
+  // Configure Google OAuth request with platform-specific client IDs
+  // Includes calendar scope for task synchronization
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId:
       Platform.OS === "ios" ? GOOGLE_IOS_CLIENT_ID : GOOGLE_ANDROID_CLIENT_ID,
@@ -36,7 +40,8 @@ export const useGoogleAuth = () => {
     extraParams: { access_type: "offline", prompt: "consent" },
   });
 
-  // Add function to load saved token
+  // Load previously saved Google access token from secure storage
+  // Used to restore calendar access after app restart
   const loadSavedToken = async () => {
     try {
       const savedToken = await SecureStore.getItemAsync("googleAccessToken");

@@ -30,6 +30,7 @@ export type TimerHandle = {
 
 const Timer = forwardRef<TimerHandle, TimerProps>(
   ({ subtask, onUpdate, onDelete, onActiveChange }, ref) => {
+    // Initialize timer state from subtask duration or default to 2 minutes
     const initialTime = subtask.duration ? parseInt(subtask.duration) : 120;
     const [timeLeft, setTimeLeft] = useState(initialTime);
     const [isActive, setIsActive] = useState(false);
@@ -37,6 +38,7 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
       subtask.status === "COMPLETED"
     );
 
+    // Sync timer state when subtask status changes externally
     useEffect(() => {
       if (subtask.status === "COMPLETED") {
         setTimeLeft(0);
@@ -44,6 +46,7 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
       }
     }, [subtask.status]);
 
+    // Expose timer control methods to parent component
     useImperativeHandle(ref, () => ({
       complete: () => {
         completeTimer();
@@ -59,6 +62,8 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
       },
     }));
 
+    // Core timer logic: updates every second when active
+    // Handles completion and state persistence
     useEffect(() => {
       let interval: NodeJS.Timeout;
 
@@ -83,6 +88,7 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
       return () => clearInterval(interval);
     }, [isActive, timeLeft]);
 
+    // Timer control functions that handle state updates and persistence
     const startTimer = () => {
       setIsActive(true);
       handleSaveTimeLeft(timeLeft, "IN_PROGRESS");
@@ -111,6 +117,7 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
       onActiveChange?.(subtask, false, initialTime);
     };
 
+    // Persists timer state to backend and updates parent component
     const handleSaveTimeLeft = (remainingTime: number, status: TaskStatus) => {
       const updatedSubtask = {
         ...subtask,
@@ -120,6 +127,7 @@ const Timer = forwardRef<TimerHandle, TimerProps>(
       onUpdate(updatedSubtask);
     };
 
+    // Format time for display, showing hours only when needed
     const formatTime = () => {
       const { hours, minutes, seconds } = secondsToTime(timeLeft);
       return hours > 0

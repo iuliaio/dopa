@@ -37,6 +37,7 @@ const NewTaskModal = ({
   const [selectedTime, setSelectedTime] = useState<Date | undefined>(undefined);
   const [isFullyExpanded, setIsFullyExpanded] = useState(false);
 
+  // Modal animation configuration
   const maxHeight = 650;
   const minHeight = 70;
   const modalHeight = useRef(new Animated.Value(70)).current;
@@ -63,6 +64,7 @@ const NewTaskModal = ({
     });
   };
 
+  // Only allowed for anytime tasks or scheduled tasks with a selected date
   const expandModal = () => {
     if (taskListType === "Scheduled" && !selectedDate) return;
 
@@ -87,6 +89,7 @@ const NewTaskModal = ({
     closeModal();
   };
 
+  // Gesture handling for modal expansion/collapse
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -94,6 +97,7 @@ const NewTaskModal = ({
       onPanResponderMove: (_, gestureState) => {
         if (taskListType === "Scheduled" && !selectedDate) return;
 
+        // Calculate new height based on gesture
         const newHeight = Math.max(
           minHeight,
           Math.min(maxHeight, currentHeight.current - gestureState.dy)
@@ -108,6 +112,7 @@ const NewTaskModal = ({
       onPanResponderRelease: (_, gestureState) => {
         if (taskListType === "Scheduled" && !selectedDate) return;
 
+        // Determine if modal should expand or collapse based on gesture
         const shouldOpen =
           gestureState.dy < -50 || currentHeight.current > maxHeight / 2;
         if (shouldOpen) {
@@ -119,6 +124,7 @@ const NewTaskModal = ({
     })
   ).current;
 
+  // Determine if modal can be expanded based on task type and date selection
   const canExpand =
     taskListType === "Anytime" ||
     (taskListType === "Scheduled" && selectedDate);

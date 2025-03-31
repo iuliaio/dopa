@@ -45,6 +45,7 @@ const TaskListScreen = () => {
     undefined
   );
 
+  // Excludes completed tasks from the main view
   const filteredTasks = tasks
     .filter((task) => {
       if (taskListType === "Anytime") {

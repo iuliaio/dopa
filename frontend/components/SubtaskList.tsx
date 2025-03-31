@@ -32,6 +32,7 @@ const SubtaskList = ({
   onTaskUpdate,
 }: SubtaskListProps) => {
   const { addSubtask, updateSubtask, deleteSubtask, error } = useUpdateTask();
+  // Store references to timer components for external control
   const timerRefs = useRef<Map<string, TimerHandle>>(new Map());
 
   const [isModalVisible, setModalVisible] = useState(false);
